@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
@@ -10,20 +10,24 @@
         android:layout_width="match_parent"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         android:background="@color/blue_text"
-        android:id="@+id/toolbar">
+        android:id="@+id/toolbar"
+        app:titleTextColor="@android:color/white">
     </android.support.v7.widget.Toolbar>
-    <android.support.v4.widget.SwipeRefreshLayout
+    <com.xw.repo.refresh.PullToRefreshLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/refresh"
-        android:layout_below="@+id/toolbar">
-        <android.support.v7.widget.RecyclerView
+        android:layout_height="match_parent"
+        android:id="@+id/pullToRefreshLayout">
+        <com.xw.repo.refresh.PullListView
+            android:id="@+id/pullListView"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/recycler">
+            android:layout_height="match_parent"
+            android:divider="@null"
+            android:listSelector="@android:color/transparent"
+            android:overScrollMode="never"
+            android:scrollingCache="false">
 
-        </android.support.v7.widget.RecyclerView>
+        </com.xw.repo.refresh.PullListView>
 
-    </android.support.v4.widget.SwipeRefreshLayout>
+    </com.xw.repo.refresh.PullToRefreshLayout>
 
-</RelativeLayout>
+</LinearLayout>
