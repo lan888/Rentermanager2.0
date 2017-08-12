@@ -7,6 +7,7 @@ import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -23,8 +24,8 @@ public class ListAdapter extends BaseListAdapter<String> {
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        ViewHolder holder;
+    public View getView(final int position, View convertView, ViewGroup parent) {
+        final ViewHolder holder;
         if (convertView == null) {
             holder = new ViewHolder();
             if (getItemViewType(position) == 0) {
@@ -33,6 +34,7 @@ public class ListAdapter extends BaseListAdapter<String> {
             } else {
                 convertView = ((Activity) (mContext)).getLayoutInflater().inflate(R.layout.item_house, parent, false);
                 holder.textView =  convertView.findViewById(R.id.text_view);
+               holder.button = convertView.findViewById(R.id.button);
 
             }
             convertView.setTag(holder);
@@ -45,14 +47,29 @@ public class ListAdapter extends BaseListAdapter<String> {
             holder.noDataRootLayout.setLayoutParams(lp);
         } else {
             holder.textView.setText(mDataList.get(position));
+           holder.button.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    mOnItemDeleteListener.onDeleteClick(position);
+                }
+            });
 
         }
 
         return convertView;
     }
+    public interface onItemDeleteListener{
+        void onDeleteClick(int position);
+    }
+    private onItemDeleteListener mOnItemDeleteListener;
+
+    public void setOnItemDeleteListener(onItemDeleteListener mOnItemDeleteListener) {
+        this.mOnItemDeleteListener = mOnItemDeleteListener;
+    }
 
     private static final class ViewHolder {
         TextView textView;
+        Button button;
 
         LinearLayout noDataRootLayout;
     }

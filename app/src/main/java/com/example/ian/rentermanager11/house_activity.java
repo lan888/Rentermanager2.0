@@ -12,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -38,6 +39,8 @@ public class house_activity extends AppCompatActivity implements
 
     private myDatabaseHelper dbHelper;
     String pi = null;
+    String po =null;
+    String pp =null;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -45,6 +48,8 @@ public class house_activity extends AppCompatActivity implements
         setContentView(R.layout.house_layout);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+
 
         dbHelper = myDatabaseHelper.getInstance(this);
 
@@ -57,6 +62,30 @@ public class house_activity extends AppCompatActivity implements
         mAdapter = new com.example.ian.rentermanager11.ListAdapter(this,mStrings);
         mPullListView.setAdapter(mAdapter);
         updateListData();
+
+        mPullListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                int r = i+1;
+                String roomInfo ="10"+r;
+                SQLiteDatabase db = dbHelper.getWritableDatabase();
+                Cursor cursor = db.rawQuery("select * from house where room=?",new String[]{roomInfo});
+                while (cursor.moveToNext()) {
+                    pi = cursor.getString(cursor.getColumnIndex("room"));
+                    po = cursor.getString(cursor.getColumnIndex("type"));
+                    pp = cursor.getString(cursor.getColumnIndex("area"));
+                }
+                Toast.makeText(house_activity.this,"房间号为："+pi+"\n户型："+po+"\n面积为："+pp+"㎡",Toast.LENGTH_SHORT).show();
+            }
+        });
+        mAdapter.setOnItemDeleteListener(new ListAdapter.onItemDeleteListener() {
+            @Override
+            public void onDeleteClick(int position) {
+                mStrings.remove(position);
+                mAdapter.notifyDataSetChanged();
+
+            }
+        });
 
     }
     public void Data(){
@@ -200,7 +229,6 @@ public class house_activity extends AppCompatActivity implements
         }
         return true;
     }
-
 
 
 }
