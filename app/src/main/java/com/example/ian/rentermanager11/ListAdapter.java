@@ -51,6 +51,7 @@ public class ListAdapter extends BaseListAdapter<String> {
                 @Override
                 public void onClick(View view) {
                     mOnItemDeleteListener.onDeleteClick(position);
+
                 }
             });
 

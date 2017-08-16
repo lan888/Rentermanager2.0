@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.example.ian.rentermanager11.R.id.pullToRefreshLayout;
+import static com.example.ian.rentermanager11.R.layout.house;
 
 /**
  * Created by Ian on 2017/8/12 0012.
@@ -41,6 +42,7 @@ public class house_activity extends AppCompatActivity implements
     String pi = null;
     String po =null;
     String pp =null;
+    String mRoom = null;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -65,9 +67,9 @@ public class house_activity extends AppCompatActivity implements
 
         mPullListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                int r = i+1;
-                String roomInfo ="10"+r;
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+               // int r = i+1;
+               String roomInfo =mStrings.get(position).toString();
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
                 Cursor cursor = db.rawQuery("select * from house where room=?",new String[]{roomInfo});
                 while (cursor.moveToNext()) {
@@ -81,6 +83,16 @@ public class house_activity extends AppCompatActivity implements
         mAdapter.setOnItemDeleteListener(new ListAdapter.onItemDeleteListener() {
             @Override
             public void onDeleteClick(int position) {
+                String deleteText = mStrings.get(position).toString();
+                SQLiteDatabase db = dbHelper.getReadableDatabase();
+                Cursor cursor = db.rawQuery("select * from house where room=?",new String[]{deleteText});
+                while (cursor.moveToNext()){
+                     mRoom = cursor.getString(cursor.getColumnIndex("room"));
+                    if (deleteText.equals(mRoom)){
+                        deleteData();
+                        break;
+                    }
+                }
                 mStrings.remove(position);
                 mAdapter.notifyDataSetChanged();
 
@@ -139,6 +151,12 @@ public class house_activity extends AppCompatActivity implements
 
         }
 
+    public void deleteData(){
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        db.execSQL("delete from house where room="+ mRoom );
+        db.close();
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.toolbar,menu);
@@ -152,7 +170,7 @@ public class house_activity extends AppCompatActivity implements
             case R.id.add:
                 AlertDialog.Builder builder = new AlertDialog.Builder(house_activity.this);
                 LayoutInflater factory = LayoutInflater.from(house_activity.this);
-                final View textEntryView = factory.inflate(R.layout.house,null);
+                final View textEntryView = factory.inflate(house,null);
                 builder.setTitle("添加房源");
                 builder.setView(textEntryView);
 
@@ -201,10 +219,30 @@ public class house_activity extends AppCompatActivity implements
 
                 break;
             case R.id.delete:
-                if (mStrings != null){
-                    mStrings.clear();
-                    mAdapter.updateListView(mStrings);
-                }
+                AlertDialog.Builder builder1 = new AlertDialog.Builder(house_activity.this);
+                builder1.setMessage("你确定要清除所有房源数据吗？");
+
+                builder1.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+
+                    }
+                });
+
+                builder1.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        if (mStrings != null){
+                            SQLiteDatabase db = dbHelper.getReadableDatabase();
+                            db.execSQL("delete from house " );
+                            db.close();
+                            mStrings.clear();
+                            mAdapter.updateListView(mStrings);
+                        }
+                    }
+                });
+                builder1.create().show();
+
                 break;
             case R.id.settings:
                 ResourceConfig resourceConfig = new ResourceConfig() {
