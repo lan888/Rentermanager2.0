@@ -8,7 +8,7 @@ import java.util.List;
 
 /**
  * 下拉刷新列表父类适配器
- * Created by woxingxiao on 2015/9/27.
+ *
  */
 public class BaseListAdapter<T> extends ArrayAdapter<T> {
 

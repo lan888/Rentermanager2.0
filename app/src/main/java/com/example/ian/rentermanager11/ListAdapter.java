@@ -13,10 +13,7 @@ import android.widget.TextView;
 
 import java.util.List;
 
-/**
- * ListAdapter
- * Created by XiaoWei on 2015-11-14.
- */
+
 public class ListAdapter extends BaseListAdapter<String> {
 
     public ListAdapter(Context context, List<String> objects) {

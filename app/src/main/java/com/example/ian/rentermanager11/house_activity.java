@@ -42,6 +42,7 @@ public class house_activity extends AppCompatActivity implements
     String pi = null;
     String po =null;
     String pp =null;
+    String pa = null;
     String mRoom = null;
 
     @Override
@@ -68,16 +69,18 @@ public class house_activity extends AppCompatActivity implements
         mPullListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-               // int r = i+1;
-               String roomInfo =mStrings.get(position).toString();
-                SQLiteDatabase db = dbHelper.getWritableDatabase();
-                Cursor cursor = db.rawQuery("select * from house where room=?",new String[]{roomInfo});
-                while (cursor.moveToNext()) {
-                    pi = cursor.getString(cursor.getColumnIndex("room"));
-                    po = cursor.getString(cursor.getColumnIndex("type"));
-                    pp = cursor.getString(cursor.getColumnIndex("area"));
+                if (mPullListView.getCount()!=1){
+                    String roomInfo =mStrings.get(position).toString();
+                    SQLiteDatabase db = dbHelper.getWritableDatabase();
+                    Cursor cursor = db.rawQuery("select * from house where room=?",new String[]{roomInfo});
+                    while (cursor.moveToNext()) {
+                        pi = cursor.getString(cursor.getColumnIndex("room"));
+                        po = cursor.getString(cursor.getColumnIndex("type"));
+                        pp = cursor.getString(cursor.getColumnIndex("area"));
+                        pa = cursor.getString(cursor.getColumnIndex("status"));
+                    }
+                    Toast.makeText(house_activity.this,"房间号为："+pi+"\n户型："+po+"\n面积为："+pp+"㎡"+"\n是否已出租："+pa,Toast.LENGTH_SHORT).show();
                 }
-                Toast.makeText(house_activity.this,"房间号为："+pi+"\n户型："+po+"\n面积为："+pp+"㎡",Toast.LENGTH_SHORT).show();
             }
         });
         mAdapter.setOnItemDeleteListener(new ListAdapter.onItemDeleteListener() {
@@ -191,13 +194,24 @@ public class house_activity extends AppCompatActivity implements
                         String house_numInfo = house_num.getText().toString();
                         String house_typeInfo = house_type.getText().toString();
                         String house_areaInfo = house_area.getText().toString();
+                        String house_status = "否";
+                        String p = null;
                         SQLiteDatabase db = dbHelper.getWritableDatabase();
+                            Cursor cursor = db.rawQuery("select * from house where room=?",new String[]{house_numInfo});
+                            if (cursor.moveToNext()) {
+                                p = cursor.getString(cursor.getColumnIndex("room"));
 
+                        }
                         if (house_numInfo.matches("[0-9]{3}")){
                             if (house_areaInfo.matches("[1-9]\\d*\\.\\d*|0\\.\\d*[1-9]\\d*|0?\\.0+|0{4,5}")){
                                 if (house_typeInfo.matches("[1-9]{4}")){//[\u4e00-\u9fa5]{4}
-                                    db.execSQL("insert into house(room,type,area)values(?,?,?)", new String[]{house_numInfo, house_typeInfo,house_areaInfo});
-                                    Toast.makeText(house_activity.this,"已添加房源，请下滑刷新一下",Toast.LENGTH_SHORT).show();
+                                    if (house_numInfo.equals(p)){
+                                        Toast.makeText(house_activity.this,"房源重复，请重写",Toast.LENGTH_SHORT).show();
+                                    }else {
+                                        db.execSQL("insert into house(room,type,area,status)values(?,?,?,?)",
+                                                new String[]{house_numInfo, house_typeInfo,house_areaInfo,house_status});
+                                        Toast.makeText(house_activity.this,"已添加房源，请下滑刷新一下",Toast.LENGTH_SHORT).show();
+                                    }
                                 }else {
                                     Toast.makeText(house_activity.this, "户型应输入4位汉字，例如一房一厅", Toast.LENGTH_SHORT).show();
                                 }
@@ -267,6 +281,4 @@ public class house_activity extends AppCompatActivity implements
         }
         return true;
     }
-
-
 }
