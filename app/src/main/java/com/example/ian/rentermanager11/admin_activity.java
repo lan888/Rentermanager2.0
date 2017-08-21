@@ -27,7 +27,7 @@ public class admin_activity extends AppCompatActivity{
         house_btn = (Button) findViewById(R.id.house_btn);
         renter_btn = (Button) findViewById(R.id.renter_btn);
 
-        Intent intent = getIntent();
+        final Intent intent = getIntent();
         String n1 = intent.getStringExtra("i");
         ntv.setText(n1);
 
@@ -37,6 +37,13 @@ public class admin_activity extends AppCompatActivity{
                 Intent intent = new Intent(admin_activity.this,house_activity.class);
                 startActivity(intent);
 
+            }
+        });
+        renter_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(admin_activity.this,renter_activity.class);
+                startActivity(intent);
             }
         });
     }

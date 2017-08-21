@@ -14,6 +14,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.xw.repo.refresh.PullListView;
@@ -69,7 +70,7 @@ public class house_activity extends AppCompatActivity implements
         mPullListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                if (mPullListView.getCount()!=1){
+                if (mAdapter.mDataList.size()>0){
                     String roomInfo =mStrings.get(position).toString();
                     SQLiteDatabase db = dbHelper.getWritableDatabase();
                     Cursor cursor = db.rawQuery("select * from house where room=?",new String[]{roomInfo});
@@ -178,7 +179,7 @@ public class house_activity extends AppCompatActivity implements
                 builder.setView(textEntryView);
 
                 final EditText house_num =  textEntryView.findViewById(R.id.house_num);
-                final EditText house_type = textEntryView.findViewById(R.id.house_type);
+                final Spinner house_type = textEntryView.findViewById(R.id.house_type);
                 final EditText house_area =  textEntryView.findViewById(R.id.house_area);
 
                 builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -192,7 +193,7 @@ public class house_activity extends AppCompatActivity implements
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         String house_numInfo = house_num.getText().toString();
-                        String house_typeInfo = house_type.getText().toString();
+                        String house_typeInfo = (String)house_type.getSelectedItem();
                         String house_areaInfo = house_area.getText().toString();
                         String house_status = "否";
                         String p = null;
@@ -203,19 +204,17 @@ public class house_activity extends AppCompatActivity implements
 
                         }
                         if (house_numInfo.matches("[0-9]{3}")){
-                            if (house_areaInfo.matches("[1-9]\\d*\\.\\d*|0\\.\\d*[1-9]\\d*|0?\\.0+|0{4,5}")){
-                                if (house_typeInfo.matches("[1-9]{4}")){//[\u4e00-\u9fa5]{4}
-                                    if (house_numInfo.equals(p)){
-                                        Toast.makeText(house_activity.this,"房源重复，请重写",Toast.LENGTH_SHORT).show();
-                                    }else {
-                                        db.execSQL("insert into house(room,type,area,status)values(?,?,?,?)",
-                                                new String[]{house_numInfo, house_typeInfo,house_areaInfo,house_status});
-                                        Toast.makeText(house_activity.this,"已添加房源，请下滑刷新一下",Toast.LENGTH_SHORT).show();
-                                    }
-                                }else {
-                                    Toast.makeText(house_activity.this, "户型应输入4位汉字，例如一房一厅", Toast.LENGTH_SHORT).show();
+                            if (house_areaInfo.matches("[1-9]\\d*\\.\\d*|0\\.\\d*[1-9]\\d*|0?\\.0+|0{4,5}")) {
+                                // if (house_typeInfo.matches("[1-9]{4}")){//[\u4e00-\u9fa5]{4}
+                                if (house_numInfo.equals(p)) {
+                                    Toast.makeText(house_activity.this, "房源重复，请重新填写", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    db.execSQL("insert into house(room,type,area,status)values(?,?,?,?)",
+                                            new String[]{house_numInfo, house_typeInfo, house_areaInfo, house_status});
+                                    Toast.makeText(house_activity.this, "已添加房源，请下滑刷新一下", Toast.LENGTH_SHORT).show();
+                                //else {
+                                  //  Toast.makeText(house_activity.this, "户型应输入4位汉字，例如一房一厅", Toast.LENGTH_SHORT).show();
                                 }
-
                             }else {
                                 Toast.makeText(house_activity.this, "房间面积应填写4到5位浮点数，例如100.00", Toast.LENGTH_SHORT).show();
                             }

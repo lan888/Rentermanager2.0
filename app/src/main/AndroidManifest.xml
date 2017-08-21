@@ -19,6 +19,7 @@
         <activity android:name=".admin_activity"/>
         <activity android:name=".forgetNum_activity"/>
         <activity android:name=".house_activity"/>
+        <activity android:name=".renter_activity"/>
     </application>
 
 </manifest>
