@@ -24,7 +24,7 @@
         android:gravity="center"
         android:text="By Ian"
         android:textSize="20sp" />
-    <com.example.ian.rentermanager11.RoundImageView
+    <com.example.ian.rentermanager2.RoundImageView
         android:layout_width="100dp"
         android:layout_height="100dp"
         android:id="@+id/admin_pic"

@@ -11,6 +11,7 @@
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         android:background="@color/blue_text"
         android:id="@+id/toolbar"
+        app:navigationIcon="@mipmap/back"
         app:titleTextColor="@android:color/white">
     </android.support.v7.widget.Toolbar>
     <com.xw.repo.refresh.PullToRefreshLayout

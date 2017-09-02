@@ -13,4 +13,7 @@
     <dimen name="btn_next_height">48.0dip</dimen>
     <dimen name="cell_height">48.0dip</dimen>
     <dimen name="vertical_sep_width">1.0px</dimen>
+    <dimen name="titlebar_height">48dp</dimen>
+    <dimen name="bg_height">300dp</dimen>
+    <dimen name="text_margin">16dp</dimen>
 </resources>
