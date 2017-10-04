@@ -199,32 +199,33 @@ public class new_admin_activity extends AppCompatActivity {
                         String t =format.format(new Date());
                         double to = Double.parseDouble(billInfo)+Double.parseDouble(waterBillInfo)+Double.parseDouble(electricityBillInfo);
                         SQLiteDatabase db = dbHelper.getWritableDatabase();
+                        if (!numInfo.equals("")) {
+                            if (numInfo.matches("[0-9]{3}")) {
+                                if (billInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
+                                    if (waterBillInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
+                                        if (electricityBillInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
+                                            db.execSQL("insert into bill(room,bill,waterBill,electricityBill,time,total)values(?,?,?,?,?,?)",
+                                                    new String[]{numInfo, billInfo, waterBillInfo, electricityBillInfo, t, String.valueOf(to)});
+                                        } else {
+                                            Toast.makeText(new_admin_activity.this, "电费数额只能带两位小数", Toast.LENGTH_SHORT).show();
+                                        }
 
-                       if (numInfo.matches("[0-9]{3}")){
-                           if (billInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")){
-                               if (waterBillInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")){
-                                   if (electricityBillInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")){
-                                       db.execSQL("insert into bill(room,bill,waterBill,electricityBill,time,total)values(?,?,?,?,?,?)",
-                                               new String[]{numInfo, billInfo, waterBillInfo, electricityBillInfo,t,String.valueOf(to)});
-                                   }else {
-                                       Toast.makeText(new_admin_activity.this, "电费数额只能带两位小数", Toast.LENGTH_SHORT).show();
-                                   }
+                                    } else {
+                                        Toast.makeText(new_admin_activity.this, "水费数额只能带两位小数", Toast.LENGTH_SHORT).show();
+                                    }
 
-                               }else {
-                                   Toast.makeText(new_admin_activity.this, "水费数额只能带两位小数", Toast.LENGTH_SHORT).show();
-                               }
+                                } else {
+                                    Toast.makeText(new_admin_activity.this, "房租数额只能带两位小数", Toast.LENGTH_SHORT).show();
+                                }
 
-                           }else {
-                               Toast.makeText(new_admin_activity.this, "房租数额只能带两位小数", Toast.LENGTH_SHORT).show();
-                           }
+                            } else {
+                                Toast.makeText(new_admin_activity.this, "房号为3位纯数字", Toast.LENGTH_SHORT).show();
 
-                       }else {
-                           Toast.makeText(new_admin_activity.this, "房号为3位纯数字", Toast.LENGTH_SHORT).show();
-
-                       }
-
-
-                    }
+                            }
+                            }else {
+                                Toast.makeText(new_admin_activity.this,"房号不能为空",Toast.LENGTH_SHORT).show();
+                            }
+                        }
 
                 });
                 builder.create().show();
@@ -251,6 +252,8 @@ public class new_admin_activity extends AppCompatActivity {
 
                         break;
                     case R.id.nav_friends:
+                        Intent intent = new Intent(new_admin_activity.this,bill_activity.class);
+                        startActivity(intent);
 
                         break;
 

@@ -126,7 +126,7 @@ public class ItemFragment3 extends Fragment {
                             pp = cursor.getString(cursor.getColumnIndex("total"));
                            // pa = cursor.getString(cursor.getColumnIndex("status"));
                         }
-                        Toast.makeText(getActivity(),"房间号为："+pi+"\n时间："+po+"\n总金额为："+pp,Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getActivity(),"房间号为："+pi+"\n时间："+po+"\n该月房租金额为："+pp,Toast.LENGTH_SHORT).show();
 
 
                 }
