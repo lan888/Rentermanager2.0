@@ -25,6 +25,7 @@ public class ItemFragment1 extends Fragment {
     private myDatabaseHelper dbHelper;
     private MyItemRecyclerViewAdapter mAdapter;
     private ArrayList<String> mDatas = new ArrayList<String>();
+
     String s = null;
     String ss = null;
     String s2 = null;
@@ -35,6 +36,7 @@ public class ItemFragment1 extends Fragment {
     String s7 = null;
 
     public ItemFragment1() {
+
     }
 
     @Override
@@ -74,6 +76,7 @@ public class ItemFragment1 extends Fragment {
         private ArrayList<String> mData;
 
 
+
         public MyItemRecyclerViewAdapter(ArrayList<String> data) {
             this.mData = data;
 
@@ -110,6 +113,8 @@ public class ItemFragment1 extends Fragment {
                 mContent.setOnClickListener(this);
             }
 
+
+
             @Override
             public void onClick(View view) {
 
@@ -132,8 +137,17 @@ public class ItemFragment1 extends Fragment {
 
                 }
 
+
             }
         }
+
+
+
+
+
     }
+
+
+
 
 

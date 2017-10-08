@@ -10,14 +10,14 @@ public class Bill {
     private String waterBill;
     private String electricityBill;
     private String time;
+    private String month;
 
-    public Bill(String room,String time){
-        this.bill = bill;
+    public Bill(String room,String time,String month){
         this.room = room;
-        this.waterBill = waterBill;
-        this.electricityBill = electricityBill;
         this.time = time;
+        this.month = month;
     }
+
     public String getRoom(){
         return  room;
     }
@@ -34,3 +34,4 @@ public class Bill {
         return time;
     }
 }
+

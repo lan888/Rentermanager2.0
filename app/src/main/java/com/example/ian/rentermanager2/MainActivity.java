@@ -97,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
                                         Toast.makeText(MainActivity.this, "该用户已存在", Toast.LENGTH_SHORT).show();
                                     } else {
                                         db.execSQL("insert into admin(name,password)values(?,?)", new String[]{nameInfo, firstPasswordInfo});
+                                        Toast.makeText(MainActivity.this, "注册成功", Toast.LENGTH_SHORT).show();
                                     }
                                 } else {
                                     Toast.makeText(MainActivity.this, "两次密码不相同", Toast.LENGTH_SHORT).show();

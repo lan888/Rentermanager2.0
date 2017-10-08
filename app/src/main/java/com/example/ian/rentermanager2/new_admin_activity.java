@@ -74,7 +74,7 @@ public class new_admin_activity extends AppCompatActivity {
     private ArrayList<String> mData3 = new ArrayList<String>();
     private myDatabaseHelper dbHelper;
 
-
+    public static final String action = "broadcast.action";
     int a;
     int b;
     int c;
@@ -169,9 +169,9 @@ public class new_admin_activity extends AppCompatActivity {
         });
         mMcTv.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
+            public void onClick(final View view) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(new_admin_activity.this);
-                LayoutInflater factory = LayoutInflater.from(new_admin_activity.this);
+                final LayoutInflater factory = LayoutInflater.from(new_admin_activity.this);
                 final View textEntryView = factory.inflate(money,null);
                 builder.setTitle("收款");
                 builder.setView(textEntryView);
@@ -192,49 +192,58 @@ public class new_admin_activity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         String numInfo = num.getText().toString();
-                        String billInfo = bill.getText().toString();
-                        String waterBillInfo = waterBill.getText().toString();
-                        String electricityBillInfo = electricityBill.getText().toString();
-                        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                        String t =format.format(new Date());
-                        double to = Double.parseDouble(billInfo)+Double.parseDouble(waterBillInfo)+Double.parseDouble(electricityBillInfo);
-                        SQLiteDatabase db = dbHelper.getWritableDatabase();
-                        if (!numInfo.equals("")) {
-                            if (numInfo.matches("[0-9]{3}")) {
-                                if (billInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
-                                    if (waterBillInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
-                                        if (electricityBillInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
-                                            db.execSQL("insert into bill(room,bill,waterBill,electricityBill,time,total)values(?,?,?,?,?,?)",
-                                                    new String[]{numInfo, billInfo, waterBillInfo, electricityBillInfo, t, String.valueOf(to)});
+                        if (numInfo.equals("")) {
+                            Toast.makeText(new_admin_activity.this, "房间号不能为空", Toast.LENGTH_SHORT).show();
+                        } else {
+                            String billInfo = bill.getText().toString();
+                            String waterBillInfo = waterBill.getText().toString();
+                            String electricityBillInfo = electricityBill.getText().toString();
+                            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                            String t = format.format(new Date());
+                            double to = Double.parseDouble(billInfo) + Double.parseDouble(waterBillInfo) + Double.parseDouble(electricityBillInfo);
+                            SQLiteDatabase db = dbHelper.getWritableDatabase();
+                            if (!numInfo.equals("")) {
+                                if (numInfo.matches("[0-9]{3}")) {
+                                    if (billInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
+                                        if (waterBillInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
+                                            if (electricityBillInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
+                                                db.execSQL("insert into bill(room,bill,waterBill,electricityBill,time,total)values(?,?,?,?,?,?)",
+                                                        new String[]{numInfo, billInfo, waterBillInfo, electricityBillInfo, t, String.valueOf(to)});
+                                            } else {
+                                                Toast.makeText(new_admin_activity.this, "电费数额只能带两位小数", Toast.LENGTH_SHORT).show();
+                                            }
+
                                         } else {
-                                            Toast.makeText(new_admin_activity.this, "电费数额只能带两位小数", Toast.LENGTH_SHORT).show();
+                                            Toast.makeText(new_admin_activity.this, "水费数额只能带两位小数", Toast.LENGTH_SHORT).show();
                                         }
 
                                     } else {
-                                        Toast.makeText(new_admin_activity.this, "水费数额只能带两位小数", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(new_admin_activity.this, "房租数额只能带两位小数", Toast.LENGTH_SHORT).show();
                                     }
 
                                 } else {
-                                    Toast.makeText(new_admin_activity.this, "房租数额只能带两位小数", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(new_admin_activity.this, "房号为3位纯数字", Toast.LENGTH_SHORT).show();
+
                                 }
-
                             } else {
-                                Toast.makeText(new_admin_activity.this, "房号为3位纯数字", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(new_admin_activity.this, "房号不能为空", Toast.LENGTH_SHORT).show();
+                            }
+                           recreate();
 
-                            }
-                            }else {
-                                Toast.makeText(new_admin_activity.this,"房号不能为空",Toast.LENGTH_SHORT).show();
-                            }
+
                         }
+                    }
 
                 });
                 builder.create().show();
+
             }
         });
 
 
 
     }
+
 
 
     private void initListener(){
@@ -460,5 +469,6 @@ public class new_admin_activity extends AppCompatActivity {
         fragments.add(new ItemFragment3());
         return fragments;
     }
+
 
 }

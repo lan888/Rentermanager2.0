@@ -1,6 +1,7 @@
 package com.example.ian.rentermanager2;
 
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
@@ -59,7 +60,8 @@ public class renter_activity extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                finish();
+                Intent intent = new Intent(renter_activity.this,new_admin_activity.class);
+                startActivity(intent);
             }
         });
 

@@ -46,8 +46,9 @@ public class ItemFragment3 extends Fragment {
 
                 String room = cursor.getString(cursor.getColumnIndex("room"));
                 String time = cursor.getString(cursor.getColumnIndex("time"));
+                String month = cursor.getString(cursor.getColumnIndex("month"));
 
-               mDatas.add(new Bill(room,time));
+               mDatas.add(new Bill(room,time,month));
 
         }
 
@@ -126,7 +127,7 @@ public class ItemFragment3 extends Fragment {
                             pp = cursor.getString(cursor.getColumnIndex("total"));
                            // pa = cursor.getString(cursor.getColumnIndex("status"));
                         }
-                        Toast.makeText(getActivity(),"房间号为："+pi+"\n时间："+po+"\n该月房租金额为："+pp,Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getActivity(),"房间号为："+pi+"\n时间："+po+"\n上月房租金额为："+pp,Toast.LENGTH_SHORT).show();
 
 
                 }

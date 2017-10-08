@@ -1,6 +1,7 @@
 package com.example.ian.rentermanager2;
 
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
@@ -14,6 +15,7 @@ import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -26,7 +28,10 @@ import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by Ian on 2017/10/1 0001.
@@ -38,6 +43,7 @@ public class bill_activity extends AppCompatActivity {
     private int lastVisibleItem;
     private MyAdapter Adapter;
 
+
     private myDatabaseHelper dbHelper;
     String s = null;
     String ss = null;
@@ -45,8 +51,10 @@ public class bill_activity extends AppCompatActivity {
     String s3 = null;
     String s4 = null;
     String s5 = null;
+    String s1 = null;
     String s6 = null;
     String s7 = null;
+    String sss = null;
     String mName = null;
 
     @Override
@@ -59,7 +67,8 @@ public class bill_activity extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                finish();
+                Intent intent = new Intent(bill_activity.this,new_admin_activity.class);
+                startActivity(intent);
             }
         });
 
@@ -81,6 +90,8 @@ public class bill_activity extends AppCompatActivity {
         mRecyclerView.setLayoutManager(manager);
         mRecyclerView.addOnItemTouchListener(new SwipeItemLayout.OnSwipeItemTouchListener(this));
         mRecyclerView.addItemDecoration(new DividerItemDecoration(this,DividerItemDecoration.VERTICAL));
+
+
 
         srl.setColorSchemeColors(Color.BLUE);
         srl.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
@@ -128,7 +139,8 @@ public class bill_activity extends AppCompatActivity {
         while (cursor.moveToNext()) {
             s = cursor.getString(cursor.getColumnIndex("room"));
             ss = cursor.getString(cursor.getColumnIndex("time"));
-            data.add(new Bill(s,ss));
+            sss = cursor.getString(cursor.getColumnIndex("month"));
+            data.add(new Bill(s,ss,sss));
         }
     }
 
@@ -171,40 +183,49 @@ public class bill_activity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         String numInfo = num.getText().toString();
-                        String billInfo = bill.getText().toString();
-                        String waterBillInfo = waterBill.getText().toString();
-                        String electricityBillInfo = electricityBill.getText().toString();
-                        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                        String t =format.format(new Date());
-                        double to = Double.parseDouble(billInfo)+Double.parseDouble(waterBillInfo)+Double.parseDouble(electricityBillInfo);
-                        SQLiteDatabase db = dbHelper.getWritableDatabase();
-                        Cursor cursor = db.rawQuery("select * from bill where room=?",new String[]{numInfo});
-                        if (cursor.moveToNext()) {
-                            ss = cursor.getString(cursor.getColumnIndex("room"));
+                        if (numInfo.equals("")){
+                            Toast.makeText(bill_activity.this,"房间号不能为空",Toast.LENGTH_SHORT).show();
+                        }else {
 
-                        }
-                        if (numInfo.matches("[0-9]{3}")){
-                            if (billInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")){
-                                if (waterBillInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")){
-                                    if (electricityBillInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")){
-                                        db.execSQL("insert into bill(room,bill,waterBill,electricityBill,time,total)values(?,?,?,?,?,?)",
-                                                new String[]{numInfo, billInfo, waterBillInfo, electricityBillInfo,t,String.valueOf(to)});
-                                    }else {
-                                        Toast.makeText(bill_activity.this, "电费数额只能带两位小数", Toast.LENGTH_SHORT).show();
-                                    }
+                            String billInfo = bill.getText().toString();
+                            String waterBillInfo = waterBill.getText().toString();
+                            String electricityBillInfo = electricityBill.getText().toString();
+                            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                            int month = Calendar.getInstance().get(Calendar.MONTH)+1;
+                            String m =month+"月份";
+                            String t = format.format(new Date());
+                            double to = Double.parseDouble(billInfo) + Double.parseDouble(waterBillInfo) + Double.parseDouble(electricityBillInfo);
+                            SQLiteDatabase db = dbHelper.getWritableDatabase();
+                            Cursor cursor = db.rawQuery("select * from bill where room=?", new String[]{numInfo});
+                            if (cursor.moveToNext()) {
+                                s1 = cursor.getString(cursor.getColumnIndex("room"));
 
-                                }else {
-                                    Toast.makeText(bill_activity.this, "水费数额只能带两位小数", Toast.LENGTH_SHORT).show();
-                                }
-
-                            }else {
-                                Toast.makeText(bill_activity.this, "房租数额只能带两位小数", Toast.LENGTH_SHORT).show();
                             }
 
-                        }else {
-                            Toast.makeText(bill_activity.this, "房号为3位纯数字", Toast.LENGTH_SHORT).show();
+                            if (numInfo.matches("[0-9]{3}")) {
+                                if (billInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
+                                    if (waterBillInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
+                                        if (electricityBillInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
+                                            db.execSQL("insert into bill(room,bill,waterBill,electricityBill,month,time,total)values(?,?,?,?,?,?,?)",
+                                                    new String[]{numInfo, billInfo, waterBillInfo, electricityBillInfo,m, t, String.valueOf(to)});
+                                        } else {
+                                            Toast.makeText(bill_activity.this, "电费数额只能带两位小数", Toast.LENGTH_SHORT).show();
+                                        }
 
+                                    } else {
+                                        Toast.makeText(bill_activity.this, "水费数额只能带两位小数", Toast.LENGTH_SHORT).show();
+                                    }
+
+                                } else {
+                                    Toast.makeText(bill_activity.this, "房租数额只能带两位小数", Toast.LENGTH_SHORT).show();
+                                }
+
+                            } else {
+                                Toast.makeText(bill_activity.this, "房号为3位纯数字", Toast.LENGTH_SHORT).show();
+
+                            }
                         }
+
 
 
                     }
@@ -228,8 +249,7 @@ public class bill_activity extends AppCompatActivity {
                     public void onClick(DialogInterface dialogInterface, int i) {
                         if (data != null){
                             SQLiteDatabase db = dbHelper.getReadableDatabase();
-                            db.execSQL("delete from renter " );
-                            db.execSQL("update house set status='否'");
+                            db.execSQL("delete from bill " );
                             db.close();
                             data.clear();
                             Adapter.notifyDataSetChanged();
@@ -239,42 +259,126 @@ public class bill_activity extends AppCompatActivity {
                 builder1.create().show();
 
                 break;
+            case R.id.settings:
+
         }
         return true;
     }
 
-    public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
+    public class MyAdapter extends SectionedRecyclerViewAdapter<HeaderHolder,MyAdapter.DescHolder,RecyclerView.ViewHolder>{
+        public ArrayList<Bill> billList;
 
-        private ArrayList<Bill> mData;
+        private LayoutInflater mInflater;
+        private SparseBooleanArray mBooleanMap;
 
-        public MyAdapter(ArrayList<Bill> data){
-            this.mData=data;
+        public MyAdapter(ArrayList<Bill> billList) {
+            this.billList = billList;
+            mInflater = LayoutInflater.from(getBaseContext());
+            mBooleanMap = new SparseBooleanArray();
+        }
+
+        @Override
+        protected int getSectionCount() {
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
+            ArrayList<String>months = new ArrayList<String>();
+            Cursor cursor = db.rawQuery("select distinct month from bill", null);
+            while (cursor.moveToNext()){
+                s6 = cursor.getString(cursor.getColumnIndex("month"));
+                months.add(s6);
+            }
+
+
+
+            return BillUtils.isEmpty(billList) ? 0 : months.size();
+        }
+        @Override
+        protected int getItemCountForSection(int section) {
+            int count = billList.size();
+            if (count >= 0 && !mBooleanMap.get(section)) {
+                count = 0;
+            }
+            return BillUtils.isEmpty(billList) ? 0 : count;
+        }
+
+        //是否有footer布局
+        @Override
+        protected boolean hasFooterInSection(int section) {
+            return false;
+        }
+
+        @Override
+        protected HeaderHolder onCreateSectionHeaderViewHolder(ViewGroup parent, int viewType) {
+            return new HeaderHolder(mInflater.inflate(R.layout.bill_title_item, parent, false));
+        }
+
+        @Override
+        protected RecyclerView.ViewHolder onCreateSectionFooterViewHolder(ViewGroup parent, int viewType) {
+            return null;
+        }
+
+        @Override
+        protected DescHolder onCreateItemViewHolder(ViewGroup parent, int viewType) {
+            return new DescHolder(mInflater.inflate(R.layout.item_renter,parent, false));
+        }
+
+        @Override
+        protected void onBindSectionHeaderViewHolder(final HeaderHolder holder, final int section) {
+            holder.openView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    boolean isOpen = mBooleanMap.get(section);
+                    String text = isOpen ? "展开" : "关闭";
+                    mBooleanMap.put(section, !isOpen);
+                    holder.openView.setText(text);
+                    notifyDataSetChanged();
+                }
+            });
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
+            ArrayList<String>months = new ArrayList<String>();
+            Cursor cursor = db.rawQuery("select distinct month from bill", null);
+            while (cursor.moveToNext()){
+                s6 = cursor.getString(cursor.getColumnIndex("month"));
+                months.add(s6);
+            }
+            holder.titleView.setText(months.get(section));
+            holder.openView.setText(mBooleanMap.get(section) ? "关闭" : "展开");
+
+        }
+
+
+        @Override
+        protected void onBindSectionFooterViewHolder(RecyclerView.ViewHolder holder, int section) {
 
         }
 
         @Override
-        public MyAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_renter,parent,false);
-            ViewHolder viewHolder = new ViewHolder(v);
-            return viewHolder;
+        protected void onBindItemViewHolder(DescHolder holder, int section, int position) {
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
+            ArrayList<String>months = new ArrayList<String>();
+            ArrayList<String>rooms = new ArrayList<String>();
+            Map<String,ArrayList> bills= new HashMap<>();
+            bills.put(s6,rooms);
+            Cursor cursor = db.rawQuery("select distinct month from bill", null);
+            while (cursor.moveToNext()){
+                s6 = cursor.getString(cursor.getColumnIndex("month"));
+                months.add(s6);
+            }
+            Cursor cursor1 = db.rawQuery("select * from bill where month=?", new String[]{s6});
+            while (cursor1.moveToNext()){
+                s7 = cursor1.getString(cursor1.getColumnIndex("room"));
+                rooms.add(s7);
+            }
+            String key = (String)bills.keySet().iterator().next();
+            holder.mTv.setText((String)bills.get(key).get(section));
+
         }
 
-        @Override
-        public void onBindViewHolder(MyAdapter.ViewHolder holder, int position) {
-            holder.mTv.setText(mData.get(position).getRoom());
-        }
-
-        @Override
-        public int getItemCount() {
-            return mData.size() ;
-        }
-
-        class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
+        class DescHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
             TextView mTv;
             Button mDel;
 
 
-            public ViewHolder(View itemView){
+            public DescHolder(View itemView){
                 super(itemView);
                 mTv = itemView.findViewById(R.id.text_view1);
                 mTv.setOnClickListener(this);
@@ -283,32 +387,34 @@ public class bill_activity extends AppCompatActivity {
             }
 
             @Override
-            public void onClick(View view) {
+            public void onClick(View view ) {
                 switch (view.getId()){
                     case R.id.text_view1:
-                        int clickPosition = mRecyclerView.getChildAdapterPosition(itemView);
-                        String nameInfo = data.get(clickPosition).getRoom().toString();
+                        int clickPosition =Adapter.getItemPosition(getAdapterPosition());
+                        String nameInfo = billList.get(clickPosition).getRoom().toString();
                         SQLiteDatabase db = dbHelper.getWritableDatabase();
                         Cursor cursor = db.rawQuery("select * from bill where room=?",new String[]{nameInfo});
                         while (cursor.moveToNext()) {
                             ss = cursor.getString(cursor.getColumnIndex("room"));
                             s2 = cursor.getString(cursor.getColumnIndex("time"));
                             s3 = cursor.getString(cursor.getColumnIndex("total"));
+                            s4 = cursor.getString(cursor.getColumnIndex("waterBill"));
+                            s5 = cursor.getString(cursor.getColumnIndex("electricityBill"));
 
 
                         }
-                        Toast.makeText(bill_activity.this,"房间号为："+ss+"\n时间："+s2+"\n该月房租金额为："+s3,Toast.LENGTH_SHORT).show();
+                        Toast.makeText(bill_activity.this,"房间号为："+ss+"\n时间："+s2+"\n上月水费金额为："+s4+"\n上月电费金额为："+s5+"\n上月房租总金额为："+s3,Toast.LENGTH_SHORT).show();
 
                         break;
                     case R.id.del_button:
-                        int clickPosition1 = mRecyclerView.getChildAdapterPosition(itemView);
-                        String deleteText = data.get(clickPosition1).toString();
+                        int clickPosition1 = Adapter.getItemPosition(getAdapterPosition());
+                        String deleteText =  billList.get(clickPosition1).getRoom().toString();
                         SQLiteDatabase db1 = dbHelper.getReadableDatabase();
                         Cursor cursor1 = db1.rawQuery("select * from bill where room=?",new String[]{deleteText});
                         while (cursor1.moveToNext()){
-                            mName = cursor1.getString(cursor1.getColumnIndex("name"));
+                            mName = cursor1.getString(cursor1.getColumnIndex("room"));
                             if (deleteText.equals(mName)){
-                               // deleteData();
+                                deleteData();
                                 db1.close();
                                 break;
                             }
@@ -320,11 +426,12 @@ public class bill_activity extends AppCompatActivity {
 
             }
         }
+
     }
-//    public void deleteData(){
-//        SQLiteDatabase db = dbHelper.getWritableDatabase();
-//        db.execSQL("delete from bill where name='"+ mName+"'" );
-//    }
+    public void deleteData(){
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        db.execSQL("delete from bill where room='"+ mName+"'" );
+    }
 
 }
 
