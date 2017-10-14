@@ -260,6 +260,7 @@ public class bill_activity extends AppCompatActivity {
 
                 break;
             case R.id.settings:
+                break;
 
         }
         return true;
