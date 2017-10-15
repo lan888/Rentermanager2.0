@@ -30,8 +30,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Created by Ian on 2017/10/1 0001.
@@ -40,6 +38,11 @@ import java.util.Map;
 public class bill_activity extends AppCompatActivity {
     private RecyclerView mRecyclerView;
     private ArrayList<Bill> data = new ArrayList<Bill>();
+    ArrayList<String>month1 = new ArrayList<String>();
+    ArrayList<String>month2 = new ArrayList<String>();
+    ArrayList<String>month3 = new ArrayList<String>();
+    ArrayList<String>months = new ArrayList<String>();
+    ArrayList<String> bills= new ArrayList<String>();
     private int lastVisibleItem;
     private MyAdapter Adapter;
 
@@ -56,6 +59,7 @@ public class bill_activity extends AppCompatActivity {
     String s7 = null;
     String sss = null;
     String mName = null;
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -74,10 +78,30 @@ public class bill_activity extends AppCompatActivity {
 
         dbHelper = myDatabaseHelper.getInstance(this);
 
+
+
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        String[]s = {"1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"};
+        for (int i = 0;i<s.length;i++){
+            months.add(s[i]);
+        }
+
+
+
+
+        Cursor cursor1 = db.rawQuery("select * from bill where month=?", new String[]{s[1]});
+        while (cursor1.moveToNext()){
+            s7 = cursor1.getString(cursor1.getColumnIndex("room"));
+            month1.add(s7);
+        }
+        Cursor cursor2 = db.rawQuery("select * from bill where month=?", new String[]{s[2]});
+        while (cursor2.moveToNext()){
+            s6 = cursor2.getString(cursor1.getColumnIndex("room"));
+            month2.add(s6);
+        }
+
         initData();
         initView();
-
-
     }
 
     private void initView() {
@@ -192,7 +216,7 @@ public class bill_activity extends AppCompatActivity {
                             String electricityBillInfo = electricityBill.getText().toString();
                             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                             int month = Calendar.getInstance().get(Calendar.MONTH)+1;
-                            String m =month+"月份";
+                            String m =month+"月";
                             String t = format.format(new Date());
                             double to = Double.parseDouble(billInfo) + Double.parseDouble(waterBillInfo) + Double.parseDouble(electricityBillInfo);
                             SQLiteDatabase db = dbHelper.getWritableDatabase();
@@ -260,7 +284,7 @@ public class bill_activity extends AppCompatActivity {
 
                 break;
             case R.id.settings:
-                break;
+
 
         }
         return true;
@@ -280,25 +304,21 @@ public class bill_activity extends AppCompatActivity {
 
         @Override
         protected int getSectionCount() {
-            SQLiteDatabase db = dbHelper.getWritableDatabase();
-            ArrayList<String>months = new ArrayList<String>();
-            Cursor cursor = db.rawQuery("select distinct month from bill", null);
-            while (cursor.moveToNext()){
-                s6 = cursor.getString(cursor.getColumnIndex("month"));
-                months.add(s6);
-            }
-
 
 
             return BillUtils.isEmpty(billList) ? 0 : months.size();
         }
         @Override
         protected int getItemCountForSection(int section) {
-            int count = billList.size();
+            int count=billList.size() ;
             if (count >= 0 && !mBooleanMap.get(section)) {
                 count = 0;
             }
-            return BillUtils.isEmpty(billList) ? 0 : count;
+           if (count >=0 && mBooleanMap.get(section)&& section==1){
+               count = month1.size();
+               return BillUtils.isEmpty(billList) ? 0 : count;
+           }
+           return 0;
         }
 
         //是否有footer布局
@@ -334,13 +354,7 @@ public class bill_activity extends AppCompatActivity {
                     notifyDataSetChanged();
                 }
             });
-            SQLiteDatabase db = dbHelper.getWritableDatabase();
-            ArrayList<String>months = new ArrayList<String>();
-            Cursor cursor = db.rawQuery("select distinct month from bill", null);
-            while (cursor.moveToNext()){
-                s6 = cursor.getString(cursor.getColumnIndex("month"));
-                months.add(s6);
-            }
+
             holder.titleView.setText(months.get(section));
             holder.openView.setText(mBooleanMap.get(section) ? "关闭" : "展开");
 
@@ -354,23 +368,11 @@ public class bill_activity extends AppCompatActivity {
 
         @Override
         protected void onBindItemViewHolder(DescHolder holder, int section, int position) {
-            SQLiteDatabase db = dbHelper.getWritableDatabase();
-            ArrayList<String>months = new ArrayList<String>();
-            ArrayList<String>rooms = new ArrayList<String>();
-            Map<String,ArrayList> bills= new HashMap<>();
-            bills.put(s6,rooms);
-            Cursor cursor = db.rawQuery("select distinct month from bill", null);
-            while (cursor.moveToNext()){
-                s6 = cursor.getString(cursor.getColumnIndex("month"));
-                months.add(s6);
-            }
-            Cursor cursor1 = db.rawQuery("select * from bill where month=?", new String[]{s6});
-            while (cursor1.moveToNext()){
-                s7 = cursor1.getString(cursor1.getColumnIndex("room"));
-                rooms.add(s7);
-            }
-            String key = (String)bills.keySet().iterator().next();
-            holder.mTv.setText((String)bills.get(key).get(section));
+
+        holder.mTv.setText(month1.get(position));
+
+
+
 
         }
 
