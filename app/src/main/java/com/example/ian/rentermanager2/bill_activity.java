@@ -89,14 +89,14 @@ public class bill_activity extends AppCompatActivity {
 
 
 
-        Cursor cursor1 = db.rawQuery("select * from bill where month=?", new String[]{s[1]});
+        Cursor cursor1 = db.rawQuery("select * from bill where month=?", new String[]{s[0]});
         while (cursor1.moveToNext()){
             s7 = cursor1.getString(cursor1.getColumnIndex("room"));
             month1.add(s7);
         }
-        Cursor cursor2 = db.rawQuery("select * from bill where month=?", new String[]{s[2]});
+        Cursor cursor2 = db.rawQuery("select * from bill where month=?", new String[]{s[1]});
         while (cursor2.moveToNext()){
-            s6 = cursor2.getString(cursor1.getColumnIndex("room"));
+            s6 = cursor2.getString(cursor2.getColumnIndex("room"));
             month2.add(s6);
         }
 
@@ -292,7 +292,6 @@ public class bill_activity extends AppCompatActivity {
 
     public class MyAdapter extends SectionedRecyclerViewAdapter<HeaderHolder,MyAdapter.DescHolder,RecyclerView.ViewHolder>{
         public ArrayList<Bill> billList;
-
         private LayoutInflater mInflater;
         private SparseBooleanArray mBooleanMap;
 
@@ -306,20 +305,18 @@ public class bill_activity extends AppCompatActivity {
         protected int getSectionCount() {
 
 
-            return BillUtils.isEmpty(billList) ? 0 : months.size();
+            return  months.size();
         }
         @Override
         protected int getItemCountForSection(int section) {
-            int count=billList.size() ;
+            int count =month1.size() ;
             if (count >= 0 && !mBooleanMap.get(section)) {
                 count = 0;
             }
-           if (count >=0 && mBooleanMap.get(section)&& section==1){
-               count = month1.size();
-               return BillUtils.isEmpty(billList) ? 0 : count;
-           }
-           return 0;
+               return  count;
+
         }
+
 
         //是否有footer布局
         @Override
@@ -369,7 +366,9 @@ public class bill_activity extends AppCompatActivity {
         @Override
         protected void onBindItemViewHolder(DescHolder holder, int section, int position) {
 
-        holder.mTv.setText(month1.get(position));
+
+        holder.mTv.setText(months.get(section));
+
 
 
 
