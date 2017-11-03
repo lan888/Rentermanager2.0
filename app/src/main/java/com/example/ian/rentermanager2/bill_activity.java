@@ -38,11 +38,6 @@ import java.util.Date;
 public class bill_activity extends AppCompatActivity {
     private RecyclerView mRecyclerView;
     private ArrayList<Bill> data = new ArrayList<Bill>();
-    ArrayList<String>month1 = new ArrayList<String>();
-    ArrayList<String>month2 = new ArrayList<String>();
-    ArrayList<String>month3 = new ArrayList<String>();
-    ArrayList<String>months = new ArrayList<String>();
-    ArrayList<String> bills= new ArrayList<String>();
     private int lastVisibleItem;
     private MyAdapter Adapter;
 
@@ -80,25 +75,6 @@ public class bill_activity extends AppCompatActivity {
 
 
 
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        String[]s = {"1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"};
-        for (int i = 0;i<s.length;i++){
-            months.add(s[i]);
-        }
-
-
-
-
-        Cursor cursor1 = db.rawQuery("select * from bill where month=?", new String[]{s[0]});
-        while (cursor1.moveToNext()){
-            s7 = cursor1.getString(cursor1.getColumnIndex("room"));
-            month1.add(s7);
-        }
-        Cursor cursor2 = db.rawQuery("select * from bill where month=?", new String[]{s[1]});
-        while (cursor2.moveToNext()){
-            s6 = cursor2.getString(cursor2.getColumnIndex("room"));
-            month2.add(s6);
-        }
 
         initData();
         initView();
@@ -159,7 +135,7 @@ public class bill_activity extends AppCompatActivity {
 
     private void initData() {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        Cursor cursor = db.rawQuery("select * from bill", null);
+        Cursor cursor = db.rawQuery("select * from bill order by time desc", null);
         while (cursor.moveToNext()) {
             s = cursor.getString(cursor.getColumnIndex("room"));
             ss = cursor.getString(cursor.getColumnIndex("time"));
@@ -290,112 +266,57 @@ public class bill_activity extends AppCompatActivity {
         return true;
     }
 
-    public class MyAdapter extends SectionedRecyclerViewAdapter<HeaderHolder,MyAdapter.DescHolder,RecyclerView.ViewHolder>{
-        public ArrayList<Bill> billList;
-        private LayoutInflater mInflater;
-        private SparseBooleanArray mBooleanMap;
+    public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
 
-        public MyAdapter(ArrayList<Bill> billList) {
-            this.billList = billList;
-            mInflater = LayoutInflater.from(getBaseContext());
-            mBooleanMap = new SparseBooleanArray();
-        }
+        private ArrayList<Bill> mData;
 
-        @Override
-        protected int getSectionCount() {
-
-
-            return  months.size();
-        }
-        @Override
-        protected int getItemCountForSection(int section) {
-            int count =month1.size() ;
-            if (count >= 0 && !mBooleanMap.get(section)) {
-                count = 0;
-            }
-               return  count;
-
-        }
-
-
-        //是否有footer布局
-        @Override
-        protected boolean hasFooterInSection(int section) {
-            return false;
-        }
-
-        @Override
-        protected HeaderHolder onCreateSectionHeaderViewHolder(ViewGroup parent, int viewType) {
-            return new HeaderHolder(mInflater.inflate(R.layout.bill_title_item, parent, false));
-        }
-
-        @Override
-        protected RecyclerView.ViewHolder onCreateSectionFooterViewHolder(ViewGroup parent, int viewType) {
-            return null;
-        }
-
-        @Override
-        protected DescHolder onCreateItemViewHolder(ViewGroup parent, int viewType) {
-            return new DescHolder(mInflater.inflate(R.layout.item_renter,parent, false));
-        }
-
-        @Override
-        protected void onBindSectionHeaderViewHolder(final HeaderHolder holder, final int section) {
-            holder.openView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    boolean isOpen = mBooleanMap.get(section);
-                    String text = isOpen ? "展开" : "关闭";
-                    mBooleanMap.put(section, !isOpen);
-                    holder.openView.setText(text);
-                    notifyDataSetChanged();
-                }
-            });
-
-            holder.titleView.setText(months.get(section));
-            holder.openView.setText(mBooleanMap.get(section) ? "关闭" : "展开");
-
-        }
-
-
-        @Override
-        protected void onBindSectionFooterViewHolder(RecyclerView.ViewHolder holder, int section) {
+        public MyAdapter(ArrayList<Bill> data){
+            this.mData=data;
 
         }
 
         @Override
-        protected void onBindItemViewHolder(DescHolder holder, int section, int position) {
-
-
-        holder.mTv.setText(months.get(section));
-
-
-
-
-
+        public MyAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_bill,parent,false);
+            ViewHolder viewHolder = new ViewHolder(v);
+            return viewHolder;
         }
 
-        class DescHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
+        @Override
+        public void onBindViewHolder(MyAdapter.ViewHolder holder, int position) {
+            holder.mTv.setText(mData.get(position).getRoom());
+            holder.mTv1.setText(mData.get(position).getTime());
+        }
+
+        @Override
+        public int getItemCount() {
+            return mData.size() ;
+        }
+
+        class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
             TextView mTv;
+            TextView mTv1;
             Button mDel;
 
 
-            public DescHolder(View itemView){
+            public ViewHolder(View itemView){
                 super(itemView);
-                mTv = itemView.findViewById(R.id.text_view1);
+                mTv = itemView.findViewById(R.id.content);
+                mTv1 = itemView.findViewById(R.id.time);
+                mTv1.setOnClickListener(this);
                 mTv.setOnClickListener(this);
                 mDel= itemView.findViewById(R.id.del_button);
                 mDel.setOnClickListener(this);
             }
 
-            @Override
             public void onClick(View view ) {
                 switch (view.getId()){
-                    case R.id.text_view1:
-                        int clickPosition =Adapter.getItemPosition(getAdapterPosition());
-                        String nameInfo = billList.get(clickPosition).getRoom().toString();
+                    case R.id.content:
+                        int clickPosition =mRecyclerView.getChildAdapterPosition(itemView);
+                        String nameInfo = data.get(clickPosition).getRoom().toString();
+                        String timeInfo = data.get(clickPosition).getTime().toString();
                         SQLiteDatabase db = dbHelper.getWritableDatabase();
-                        Cursor cursor = db.rawQuery("select * from bill where room=?",new String[]{nameInfo});
+                        Cursor cursor = db.rawQuery("select * from bill where room=? and time=?",new String[]{nameInfo,timeInfo});
                         while (cursor.moveToNext()) {
                             ss = cursor.getString(cursor.getColumnIndex("room"));
                             s2 = cursor.getString(cursor.getColumnIndex("time"));
@@ -408,20 +329,38 @@ public class bill_activity extends AppCompatActivity {
                         Toast.makeText(bill_activity.this,"房间号为："+ss+"\n时间："+s2+"\n上月水费金额为："+s4+"\n上月电费金额为："+s5+"\n上月房租总金额为："+s3,Toast.LENGTH_SHORT).show();
 
                         break;
+                    case R.id.time:
+                        int clickPosition1 =mRecyclerView.getChildAdapterPosition(itemView);
+                        String nameInfo1 = data.get(clickPosition1).getRoom().toString();
+                        String nameInfo2 = data.get(clickPosition1).getTime().toString();
+                        SQLiteDatabase db1 = dbHelper.getWritableDatabase();
+                        Cursor cursor1 = db1.rawQuery("select * from bill where room=? and time=?",new String[]{nameInfo1,nameInfo2});
+                        while (cursor1.moveToNext()) {
+                            ss = cursor1.getString(cursor1.getColumnIndex("room"));
+                            s2 = cursor1.getString(cursor1.getColumnIndex("time"));
+                            s3 = cursor1.getString(cursor1.getColumnIndex("total"));
+                            s4 = cursor1.getString(cursor1.getColumnIndex("waterBill"));
+                            s5 = cursor1.getString(cursor1.getColumnIndex("electricityBill"));
+
+
+                        }
+                        Toast.makeText(bill_activity.this,"房间号为："+ss+"\n时间："+s2+"\n上月水费金额为："+s4+"\n上月电费金额为："+s5+"\n上月房租总金额为："+s3,Toast.LENGTH_SHORT).show();
+
+                        break;
                     case R.id.del_button:
-                        int clickPosition1 = Adapter.getItemPosition(getAdapterPosition());
-                        String deleteText =  billList.get(clickPosition1).getRoom().toString();
-                        SQLiteDatabase db1 = dbHelper.getReadableDatabase();
-                        Cursor cursor1 = db1.rawQuery("select * from bill where room=?",new String[]{deleteText});
-                        while (cursor1.moveToNext()){
-                            mName = cursor1.getString(cursor1.getColumnIndex("room"));
+                        int clickPosition2 = mRecyclerView.getChildAdapterPosition(itemView);
+                        String deleteText =  data.get(clickPosition2).getRoom().toString();
+                        SQLiteDatabase db2 = dbHelper.getReadableDatabase();
+                        Cursor cursor2 = db2.rawQuery("select * from bill where room=?",new String[]{deleteText});
+                        while (cursor2.moveToNext()){
+                            mName = cursor2.getString(cursor2.getColumnIndex("room"));
                             if (deleteText.equals(mName)){
                                 deleteData();
-                                db1.close();
+                                db2.close();
                                 break;
                             }
                         }
-                        data.remove(clickPosition1);
+                        data.remove(clickPosition2);
                         Adapter.notifyDataSetChanged();
                         break;
                 }
@@ -430,6 +369,7 @@ public class bill_activity extends AppCompatActivity {
         }
 
     }
+
     public void deleteData(){
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         db.execSQL("delete from bill where room='"+ mName+"'" );
