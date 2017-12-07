@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.example.ian.rentermanager2.SwipeItemLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/view"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:foreground="?android:attr/selectableItemBackground"
+    android:layout_margin="5dp"
+    android:paddingBottom="5dp"
+    app:cardCornerRadius="5dp"
+    app:cardUseCompatPadding="true"
+    >
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <TextView
+            android:id="@+id/id"
+            android:layout_width="50dp"
+            android:layout_height="match_parent"
+            android:layout_margin="@dimen/text_margin"
+            android:textAppearance="?attr/textAppearanceListItem" />
+
+
+        <TextView
+            android:id="@+id/content"
+            android:layout_width="50dp"
+            android:layout_height="match_parent"
+            android:layout_toRightOf="@+id/id"
+            android:layout_margin="@dimen/text_margin"
+            android:textAppearance="?attr/textAppearanceListItem" />
+        <TextView
+            android:id="@+id/time"
+            android:layout_width="200dp"
+            android:layout_height="match_parent"
+            android:layout_toRightOf="@+id/content"
+            android:layout_margin="@dimen/text_margin"
+            android:maxLines="1"
+            android:maxEms="10"
+            android:ellipsize="end"
+            android:textAppearance="?attr/textAppearanceListItem" />
+    </RelativeLayout>
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent">
+            <Button
+                android:id="@+id/del_button"
+                android:layout_width="45dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="right"
+                android:background="@mipmap/ic_delete1"
+                android:focusable="false"/>
+
+        </LinearLayout>
+
+
+
+</com.example.ian.rentermanager2.SwipeItemLayout>
