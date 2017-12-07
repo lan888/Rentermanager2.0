@@ -8,6 +8,8 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
@@ -20,6 +22,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -30,6 +33,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.ian.rentermanager2.behavior.AppBarLayoutOverScrollViewBehavior;
+import com.example.ian.rentermanager2.entity.Bill;
+import com.example.ian.rentermanager2.entity.Renters;
+import com.example.ian.rentermanager2.entity.Rooms;
 import com.example.ian.rentermanager2.widget.CircleImageView;
 import com.example.ian.rentermanager2.widget.NoScrollViewPager;
 import com.example.ian.rentermanager2.widget.RoundProgressBar;
@@ -38,19 +44,20 @@ import com.example.mylibrary.listener.CustomTabEntity;
 import com.example.mylibrary.listener.OnTabSelectListener;
 import com.jaeger.library.StatusBarUtil;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
-import static com.example.ian.rentermanager2.R.layout.money;
+import cn.bmob.v3.BmobQuery;
+import cn.bmob.v3.exception.BmobException;
+import cn.bmob.v3.listener.FindListener;
+import cn.bmob.v3.listener.SaveListener;
 
 
 /**
  * Created by Ian on 2017/8/24 0024.
  */
 
-public class new_admin_activity extends AppCompatActivity {
+public class NewAdminActivity extends AppCompatActivity {
 
     private ImageView mZoomIv;
     private Toolbar mToolBar;
@@ -75,11 +82,12 @@ public class new_admin_activity extends AppCompatActivity {
     private myDatabaseHelper dbHelper;
 
     public static final String action = "broadcast.action";
+
     int a;
     int b;
     int c;
 
-
+    final  Bill b1= new Bill() ;
 
 
 
@@ -88,38 +96,97 @@ public class new_admin_activity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_demo1);
 
-        findId();
-        initListener();
-        initTab();
-        initStatus();
-
-        final View headerView = mNav.getHeaderView(0);
-        nUser = headerView.findViewById(R.id.nav_user);
-        final Intent intent = getIntent();
-        String s1 = intent.getStringExtra("i");
-        if (s1!=null){
-            SharedPreferences.Editor editor = getSharedPreferences("data",MODE_PRIVATE).edit();
-            editor.putString("name",s1);
-            editor.apply();
-
-        }
-        SharedPreferences pref = getSharedPreferences("data",MODE_PRIVATE);
-        String s2 = pref.getString("name","");
-        nUser.setText(s2);
-
-
-
-
-
+        getDatas();
 
 
 
     }
+    public void getDatas(){
+        BmobQuery<Rooms> query = new BmobQuery<Rooms>();
+        query.findObjects(new FindListener<Rooms>(){
+            @Override
+            public void done(List<Rooms> list, BmobException e) {
+                if (e == null) {
+                    for (Rooms r : list) {
+                        String s = r.getRoom();
+                        mData1.add(s);
+                    }
+                    Log.i("a","a:"+mData1.size());
+                    a = mData1.size();
+
+                    BmobQuery<Renters> query = new BmobQuery<Renters>();
+                    query.findObjects(new FindListener<Renters>(){
+                        @Override
+                        public void done(List<Renters> list, BmobException e) {
+                            if (e == null) {
+                                for (Renters r : list) {
+                                    String s = r.getName();
+                                    mData2.add(s);
+                                }
+                                Log.i("b","b:"+mData2.size());
+                                b = mData2.size();
+                                BmobQuery<Bill> query = new BmobQuery<Bill>();
+                                query.findObjects(new FindListener<Bill>(){
+                                    @Override
+                                    public void done(List<Bill> list, BmobException e) {
+                                        if (e == null) {
+                                            for (Bill r : list) {
+                                                String s = r.getRoom();
+                                                mData3.add(s);
+                                            }
+                                            Log.i("c","c:"+mData3.size());
+                                            c = mData3.size();
+
+                                            handler.sendEmptyMessage(0);
+                                        }else {
+                                            Log.i("bmob","失败："+e.getMessage()+","+e.getErrorCode());
+                                        }
+                                    }
+                                });
+
+                            }else {
+                                Log.i("bmob","失败："+e.getMessage()+","+e.getErrorCode());
+                            }
+                        }
+                    });
+                }else {
+                    Log.i("bmob","失败："+e.getMessage()+","+e.getErrorCode());
+                }
+            }
+        });
+    }
 
 
+    Handler handler = new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            findId();
+            initListener();
+            initTab();
+            initStatus();
+
+            final View headerView = mNav.getHeaderView(0);
+            nUser = headerView.findViewById(R.id.nav_user);
+            final Intent intent = getIntent();
+            String s1 = intent.getStringExtra("i");
+            if (s1!=null){
+                SharedPreferences.Editor editor = getSharedPreferences("data",MODE_PRIVATE).edit();
+                editor.putString("name",s1);
+                editor.apply();
+
+            }
+            SharedPreferences pref = getSharedPreferences("data",MODE_PRIVATE);
+            String s2 = pref.getString("name","");
+            nUser.setText(s2);
+
+
+
+        }
+    };
 
     public static void actionStart(Context context, String nameInfo ){
-        Intent intent = new Intent(context,new_admin_activity.class);
+        Intent intent = new Intent(context,NewAdminActivity.class);
         intent.putExtra("i",nameInfo);
         context.startActivity(intent);
     }
@@ -147,6 +214,7 @@ public class new_admin_activity extends AppCompatActivity {
     }
 
     private void initTab(){
+
         fragments = getFragments();
         MyFragmentPagerAdapter myFragmentPagerAdapter = new MyFragmentPagerAdapter(getSupportFragmentManager(),fragments,getNames());
 
@@ -162,7 +230,7 @@ public class new_admin_activity extends AppCompatActivity {
         mMsgTv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(new_admin_activity.this,"小样，赶紧交房租！哈哈哈",Toast.LENGTH_SHORT).show();
+                Toast.makeText(NewAdminActivity.this,"小样，赶紧交房租！哈哈哈",Toast.LENGTH_SHORT).show();
                 SQLiteDatabase db = dbHelper.getReadableDatabase();
                 db.execSQL("delete from bill " );
             }
@@ -170,9 +238,9 @@ public class new_admin_activity extends AppCompatActivity {
         mMcTv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View view) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(new_admin_activity.this);
-                final LayoutInflater factory = LayoutInflater.from(new_admin_activity.this);
-                final View textEntryView = factory.inflate(money,null);
+                AlertDialog.Builder builder = new AlertDialog.Builder(NewAdminActivity.this);
+                final LayoutInflater factory = LayoutInflater.from(NewAdminActivity.this);
+                final View textEntryView = factory.inflate(R.layout.money,null);
                 builder.setTitle("收款");
                 builder.setView(textEntryView);
 
@@ -193,40 +261,52 @@ public class new_admin_activity extends AppCompatActivity {
                     public void onClick(DialogInterface dialogInterface, int i) {
                         String numInfo = num.getText().toString();
                         if (numInfo.equals("")) {
-                            Toast.makeText(new_admin_activity.this, "房间号不能为空", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(NewAdminActivity.this, "房间号不能为空", Toast.LENGTH_SHORT).show();
                         } else {
-                            String billInfo = bill.getText().toString();
-                            String waterBillInfo = waterBill.getText().toString();
-                            String electricityBillInfo = electricityBill.getText().toString();
-                            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                            String t = format.format(new Date());
-                            double to = Double.parseDouble(billInfo) + Double.parseDouble(waterBillInfo) + Double.parseDouble(electricityBillInfo);
-                            SQLiteDatabase db = dbHelper.getWritableDatabase();
+                            double billInfo = Double.parseDouble(bill.getText().toString());
+                            double waterBillInfo = Double.parseDouble(waterBill.getText().toString());
+                            double electricityBillInfo = Double.parseDouble(electricityBill.getText().toString());
+
                             if (!numInfo.equals("")) {
                                 if (numInfo.matches("[0-9]{3}")) {
-                                    if (billInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
-                                        if (waterBillInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
-                                            if (electricityBillInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
-                                                db.execSQL("insert into bill(room,bill,waterBill,electricityBill,time,total)values(?,?,?,?,?,?)",
-                                                        new String[]{numInfo, billInfo, waterBillInfo, electricityBillInfo, t, String.valueOf(to)});
+                                    if (bill.getText().toString().matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
+                                        if (waterBill.getText().toString().matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
+                                            if (electricityBill.getText().toString().matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
+                                                b1.setRoom(numInfo);
+                                                b1.setBill(billInfo+waterBillInfo+electricityBillInfo);
+                                                b1.setWaterBill(waterBillInfo);
+                                                b1.setElectricityBill(electricityBillInfo);
+                                                b1.setRoomBill(billInfo);
+                                                b1.setStatus("未缴费");
+                                                b1.save(new SaveListener<String>() {
+                                                    @Override
+                                                    public void done(String s, BmobException e) {
+                                                        if(e==null){
+                                                            Log.e("success","添加数据成功，返回objectId为："+s) ;
+                                                        }else{
+                                                            Log.e("fail", "创建数据失败：" + e.getMessage());
+                                                        }
+                                                    }
+                                                });
+
                                             } else {
-                                                Toast.makeText(new_admin_activity.this, "电费数额只能带两位小数", Toast.LENGTH_SHORT).show();
+                                                Toast.makeText(NewAdminActivity.this, "电费数额只能带两位小数", Toast.LENGTH_SHORT).show();
                                             }
 
                                         } else {
-                                            Toast.makeText(new_admin_activity.this, "水费数额只能带两位小数", Toast.LENGTH_SHORT).show();
+                                            Toast.makeText(NewAdminActivity.this, "水费数额只能带两位小数", Toast.LENGTH_SHORT).show();
                                         }
 
                                     } else {
-                                        Toast.makeText(new_admin_activity.this, "房租数额只能带两位小数", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(NewAdminActivity.this, "房租数额只能带两位小数", Toast.LENGTH_SHORT).show();
                                     }
 
                                 } else {
-                                    Toast.makeText(new_admin_activity.this, "房号为3位纯数字", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(NewAdminActivity.this, "房号为3位纯数字", Toast.LENGTH_SHORT).show();
 
                                 }
                             } else {
-                                Toast.makeText(new_admin_activity.this, "房号不能为空", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(NewAdminActivity.this, "房号不能为空", Toast.LENGTH_SHORT).show();
                             }
                            recreate();
 
@@ -252,16 +332,16 @@ public class new_admin_activity extends AppCompatActivity {
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 switch (item.getItemId()){
                     case R.id.nav_home:
-                       house_activity.actionStart(new_admin_activity.this,null);
+                       HouseActivity.actionStart(NewAdminActivity.this,null);
 
                         break;
                     case R.id.nav_call:
-                        Intent intent1 = new Intent(new_admin_activity.this,renter_activity.class);
+                        Intent intent1 = new Intent(NewAdminActivity.this,renter_activity.class);
                         startActivityForResult(intent1,1);
 
                         break;
                     case R.id.nav_friends:
-                        Intent intent = new Intent(new_admin_activity.this,bill_activity.class);
+                        Intent intent = new Intent(NewAdminActivity.this,bill_activity.class);
                         startActivity(intent);
 
                         break;
@@ -279,7 +359,7 @@ public class new_admin_activity extends AppCompatActivity {
                 float percent = Float.valueOf(Math.abs(verticalOffset)) / Float.valueOf(appBarLayout.getTotalScrollRange());
                 if (titleCenterLayout != null && mAvater != null && mSettingIv != null && mMsgIv != null) {
                     titleCenterLayout.setAlpha(percent);
-                    StatusBarUtil.setTranslucentForImageView(new_admin_activity.this, (int) (255f * percent), null);
+                    StatusBarUtil.setTranslucentForImageView(NewAdminActivity.this, (int) (255f * percent), null);
                     if (percent == 0) {
                         groupChange(1f, 1);
                     } else if (percent == 1) {
@@ -348,10 +428,10 @@ public class new_admin_activity extends AppCompatActivity {
     private void initStatus() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {//4.4以下不支持状态栏变色
             //注意了，这里使用了第三方库 StatusBarUtil，目的是改变状态栏的alpha
-            StatusBarUtil.setTransparentForImageView(new_admin_activity.this, null);
+            StatusBarUtil.setTransparentForImageView(NewAdminActivity.this, null);
             //这里是重设我们的title布局的topMargin，StatusBarUtil提供了重设的方法，但是我们这里有两个布局
             //TODO 关于为什么不把Toolbar和@layout/layout_uc_head_title放到一起，是因为需要Toolbar来占位，防止AppBarLayout折叠时将title顶出视野范围
-            int statusBarHeight = getStatusBarHeight(new_admin_activity.this);
+            int statusBarHeight = getStatusBarHeight(NewAdminActivity.this);
             CollapsingToolbarLayout.LayoutParams lp1 = (CollapsingToolbarLayout.LayoutParams) titleContainer.getLayoutParams();
             lp1.topMargin = statusBarHeight;
             titleContainer.setLayoutParams(lp1);
@@ -405,26 +485,11 @@ public class new_admin_activity extends AppCompatActivity {
         int resourceId = context.getResources().getIdentifier("status_bar_height", "dimen", "android");
         return context.getResources().getDimensionPixelSize(resourceId);
     }
-    public void getData1() {
-        dbHelper = myDatabaseHelper.getInstance(this);
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        Cursor cursor = db.rawQuery("select room from house", null);
-        while (cursor.moveToNext()) {
-            String s = cursor.getString(cursor.getColumnIndex("room"));
-            mData1.add(s);
-        }
-    }
 
-    public void getData2(){
-        dbHelper = myDatabaseHelper.getInstance(this);
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        Cursor cursor = db.rawQuery("select name from renter", null);
-        while (cursor.moveToNext()) {
-            String s = cursor.getString(cursor.getColumnIndex("name"));
-            mData2.add(s);
-        }
-    }
-    public void getData3(){
+
+
+
+    public int getData3(){
         dbHelper = myDatabaseHelper.getInstance(this);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         Cursor cursor = db.rawQuery("select room from bill", null);
@@ -432,20 +497,19 @@ public class new_admin_activity extends AppCompatActivity {
             String s = cursor.getString(cursor.getColumnIndex("room"));
             mData3.add(s);
         }
+        return mData3.size();
     }
     public String[] getNames() {
         String[] mName1 = new String[]{"房源"};
         String[] mName2 = new String[]{"租户"};
         String[] mName3 = new String[]{"账单"};
 
-        getData1();
-        getData2();
-        getData3();
-        a = mData1.size();
-        b = mData2.size();
-        c = mData3.size();
-
+         c = getData3();
+        Log.i("b1","b:"+b);
         int i[] = {a,b,c};
+
+
+
         for (String str : mName1) {
             mTabEntities.add(new TabEntity(String.valueOf(i[0]), str));
 

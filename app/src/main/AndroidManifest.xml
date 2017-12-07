@@ -3,7 +3,18 @@
     package="com.example.ian.rentermanager2">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-
+    <!--允许联网 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!--获取GSM（2g）、WCDMA（联通3g）等网络状态的信息  -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!--获取wifi网络状态的信息 -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!--保持CPU 运转，屏幕和键盘灯有可能是关闭的,用于文件上传和下载 -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!--获取sd卡写的权限，用于文件上传和下载-->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <!--允许读取手机状态 用于创建BmobInstallation-->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -20,10 +31,12 @@
         </activity>
         <activity android:name="com.example.ian.rentermanager2.admin_activity"/>
         <activity android:name="com.example.ian.rentermanager2.forgetNum_activity"/>
-        <activity android:name="com.example.ian.rentermanager2.house_activity"/>
+        <activity android:name="com.example.ian.rentermanager2.HouseActivity"/>
         <activity android:name="com.example.ian.rentermanager2.renter_activity"/>
         <activity android:name=".bill_activity"/>
-        <activity android:name=".new_admin_activity"/>
+        <activity android:name=".NewAdminActivity"/>
+        <activity android:name=".SuccessDelActivity"/>
+        <activity android:name=".SuccessAddActivity"/>
     </application>
 
 </manifest>

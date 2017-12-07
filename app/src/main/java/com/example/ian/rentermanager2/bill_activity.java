@@ -1,178 +1,386 @@
 package com.example.ian.rentermanager2;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.Nullable;
-import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.DividerItemDecoration;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.SparseBooleanArray;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.text.SimpleDateFormat;
+import com.example.ian.rentermanager2.entity.Bill;
+import com.example.ian.rentermanager2.widget.OnValueChangeListener;
+import com.example.ian.rentermanager2.widget.StickyHeaderListView;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import cn.bmob.v3.BmobQuery;
+import cn.bmob.v3.exception.BmobException;
+import cn.bmob.v3.listener.FindListener;
+import cn.bmob.v3.listener.SaveListener;
+import cn.bmob.v3.listener.UpdateListener;
+
 
 /**
  * Created by Ian on 2017/10/1 0001.
  */
 
 public class bill_activity extends AppCompatActivity {
-    private RecyclerView mRecyclerView;
-    private ArrayList<Bill> data = new ArrayList<Bill>();
-    ArrayList<String>month1 = new ArrayList<String>();
-    ArrayList<String>month2 = new ArrayList<String>();
-    ArrayList<String>month3 = new ArrayList<String>();
-    ArrayList<String>months = new ArrayList<String>();
-    ArrayList<String> bills= new ArrayList<String>();
-    private int lastVisibleItem;
-    private MyAdapter Adapter;
 
-
-    private myDatabaseHelper dbHelper;
-    String s = null;
-    String ss = null;
-    String s2 = null;
-    String s3 = null;
-    String s4 = null;
-    String s5 = null;
-    String s1 = null;
-    String s6 = null;
-    String s7 = null;
-    String sss = null;
-    String mName = null;
-
-
+    final  Bill b1= new Bill() ;
+    private StickyHeaderListView mListView;
+    private SectionAdapter mAdapter;
+    private CheckBox mCheckAll;
+    private List<Bill> rows = new ArrayList<>();
+    private boolean isOnLoadMore = false;
+    private int count = 0;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.renter_layout);
+        setContentView(R.layout.bill_layout);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(bill_activity.this,new_admin_activity.class);
+                Intent intent = new Intent(bill_activity.this,NewAdminActivity.class);
                 startActivity(intent);
             }
         });
 
-        dbHelper = myDatabaseHelper.getInstance(this);
-
-
-
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        String[]s = {"1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"};
-        for (int i = 0;i<s.length;i++){
-            months.add(s[i]);
-        }
-
-
-
-
-        Cursor cursor1 = db.rawQuery("select * from bill where month=?", new String[]{s[0]});
-        while (cursor1.moveToNext()){
-            s7 = cursor1.getString(cursor1.getColumnIndex("room"));
-            month1.add(s7);
-        }
-        Cursor cursor2 = db.rawQuery("select * from bill where month=?", new String[]{s[1]});
-        while (cursor2.moveToNext()){
-            s6 = cursor2.getString(cursor2.getColumnIndex("room"));
-            month2.add(s6);
-        }
-
-        initData();
-        initView();
+        initListView();
+        initChechBox();
     }
 
-    private void initView() {
-        final LinearLayoutManager manager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
-        final SwipeRefreshLayout srl = (SwipeRefreshLayout) findViewById(R.id.refresh);
-
-        mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-        Adapter = new MyAdapter(data);
-        mRecyclerView.setAdapter(Adapter);
-        mRecyclerView.setLayoutManager(manager);
-        mRecyclerView.addOnItemTouchListener(new SwipeItemLayout.OnSwipeItemTouchListener(this));
-        mRecyclerView.addItemDecoration(new DividerItemDecoration(this,DividerItemDecoration.VERTICAL));
-
-
-
-        srl.setColorSchemeColors(Color.BLUE);
-        srl.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                new Handler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        data.clear();
-                        initData();
-                        Adapter.notifyDataSetChanged();
-                        srl.setRefreshing(false);
-                    }
-                }, 2000);
-            }
-        });
-        mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-                super.onScrollStateChanged(recyclerView, newState);
-                if (newState == RecyclerView.SCROLL_STATE_IDLE && lastVisibleItem == Adapter.getItemCount()) {
-                    initData();
+    private Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            mListView.setAdapter(mAdapter = new SectionAdapter(bill_activity.this, rows));
+            mAdapter.setOnValueChangedListener(new OnValueChangeListener() {
+                @Override
+                public void onChange(int totalCount, double totalAmount, boolean isCheckAll) {
+                    BigDecimal bd = new BigDecimal(totalAmount).setScale(2, RoundingMode.UP);
+                    ((TextView) findViewById(R.id.tv_desc)).setText(totalCount + "个房间，共" + bd.doubleValue() + "元");
+                    // 防止调用onCheckedChanged
+                    mCheckAll.setOnCheckedChangeListener(null);
+                    mCheckAll.setChecked(isCheckAll);
+                    mCheckAll.setOnCheckedChangeListener(onCheckedChangeListener);
                 }
-                new Handler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        Adapter.notifyDataSetChanged();
-                    }
-                }, 1500);
-            }
+            });
+        }
+    };
 
+    private void initListView() {
+        mListView = (StickyHeaderListView) findViewById(R.id.lv);
+        BmobQuery<Bill> query = new BmobQuery<Bill>();
+        query.findObjects(new FindListener<Bill>(){
             @Override
-            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                super.onScrolled(recyclerView, dx, dy);
-                lastVisibleItem = manager.findLastVisibleItemPosition();
+            public void done(List<Bill> list, BmobException e) {
+                if (e == null){
+                    for (Bill bill : list){
+                        rows.add(bill);
+                    }
+                    mHandler.sendEmptyMessage(0);
+                }
             }
         });
 
+        mListView.setOnScrollListener(new AbsListView.OnScrollListener() {
+            @Override
+            public synchronized void onScrollStateChanged(AbsListView view, int scrollState) {
+                switch (scrollState) {
+                    // 当不滚动时
+                    case AbsListView.OnScrollListener.SCROLL_STATE_IDLE:
+                        // 判断滚动到底部
+                        if (view.getLastVisiblePosition() == (view.getCount() - 1)) {
+                            if (!isOnLoadMore) {
 
+                                if(count == 0){
+                                    Toast.makeText(bill_activity.this, "没有更多数据啦~", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+
+                                count++;
+
+                                isOnLoadMore = true;
+
+                                mAdapter.addData(rows);
+
+                                isOnLoadMore = false;
+                            }
+                        }
+                        break;
+                }
+            }
+
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+
+            }
+        });
     }
 
-    private void initData() {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        Cursor cursor = db.rawQuery("select * from bill", null);
-        while (cursor.moveToNext()) {
-            s = cursor.getString(cursor.getColumnIndex("room"));
-            ss = cursor.getString(cursor.getColumnIndex("time"));
-            sss = cursor.getString(cursor.getColumnIndex("month"));
-            data.add(new Bill(s,ss,sss));
+    private void initChechBox() {
+        mCheckAll = (CheckBox) findViewById(R.id.cb_check_all);
+        mCheckAll.setOnCheckedChangeListener(onCheckedChangeListener);
+    }
+
+    CompoundButton.OnCheckedChangeListener onCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
+        @Override
+        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+            mAdapter.setCheckAll(isChecked);
+        }
+    };
+
+    public class SectionAdapter extends StickyHeaderAdapter {
+
+        private Context mContext;
+        private OnValueChangeListener listener;
+
+        private List<Bill> entityRows;
+
+        private LinkedHashMap<String, List<Bill>> map = new LinkedHashMap<String, List<Bill>>();
+
+
+        public SectionAdapter(Context context, List<Bill> entityRows) {
+            this.mContext = context;
+            this.entityRows = entityRows;
+
+            addData(entityRows);
+        }
+
+        /**
+         * 添加数据，并进行分类
+         *
+         * @param list
+         */
+        public void addData(List<Bill> list) {
+//            BmobQuery<Bill> query = new BmobQuery<Bill>();
+//            query.findObjects(new FindListener<Bill>() {
+//                @Override
+//                public void done(List<Bill> list, BmobException e) {
+//                    if (e == null) {
+            for (Bill row : list) {
+                String time = row.getCreatedAt();
+                String head = time.substring(0,7); // time
+                if (map.get(head) == null) {
+                    List<Bill> newRows = new ArrayList<>();
+                    newRows.add(row);
+                    map.put(head, newRows);
+                } else {
+                    List<Bill> newRows = map.get(head);
+                    newRows.add(row);
+                }
+            }
+//                    } else {
+//                        Log.i("bmob", "失败" + e.getMessage() + "," + e.getErrorCode());
+//                    }
+//                }
+//            });
+            updateValue();
+            notifyDataSetChanged();
+        }
+
+        public void setCheckAll(boolean checkAll) {
+            Iterator iter = map.entrySet().iterator();
+            while (iter.hasNext()) {
+                Map.Entry<String, List<Bill>> entry = (Map.Entry<String, List<Bill>>) iter.next();
+                String key = entry.getKey();
+                List<Bill> val = entry.getValue();
+
+                for (Bill row : val) {
+                    row.isChecked = checkAll;
+                }
+            }
+
+            updateValue();
+
+            notifyDataSetChanged();
+        }
+
+        public void setOnValueChangedListener(OnValueChangeListener listener) {
+            this.listener = listener;
+        }
+
+        private void updateValue() {
+            if (listener == null)
+                return;
+
+            int count = 0;
+            double amount = 0;
+            boolean isCheckAll = true;
+
+            Iterator iter = map.entrySet().iterator();
+            while (iter.hasNext()) {
+                Map.Entry<String, List<Bill>> entry = (Map.Entry<String, List<Bill>>) iter.next();
+                String key = entry.getKey();
+                List<Bill> val = entry.getValue();
+
+                for (Bill row : val) {
+                    if (row.isChecked) {
+                        count++;
+                        amount += row.getBill();
+                    } else {
+                        isCheckAll = false;
+                    }
+                }
+            }
+
+            listener.onChange(count, amount, isCheckAll);
+        }
+
+        @Override
+        public int sectionCounts() {
+            return map.keySet().toArray().length;
+        }
+
+        @Override
+        public int rowCounts(int section) {
+            if (section < 0)
+                return 0;
+
+            Object[] key = map.keySet().toArray();
+
+
+            return map.get(key[section]).size();
+        }
+
+        @Override
+        public View getRowView(int section, int row, View convertView, ViewGroup parent) {
+            View view = LayoutInflater.from(mContext).inflate(R.layout.item_row, null);
+
+            Object[] keys = map.keySet().toArray();
+            String key = (String) keys[section];
+            final Bill item = map.get(key).get(row);
+            ((TextView) view.findViewById(R.id.time)).setText(item.getCreatedAt());
+            ((TextView) view.findViewById(R.id.src)).setText(item.getRoom());
+            ((TextView) view.findViewById(R.id.dest)).setText(item.getStatus());
+            ((TextView) view.findViewById(R.id.amount)).setText(item.getBill() + "");
+            final CheckBox checkBox = ((CheckBox) view.findViewById(R.id.cb));
+            Button del = (Button) findViewById(R.id.del);
+            Button chk = (Button) findViewById(R.id.check);
+            chk.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    b1.setStatus("已缴费");
+                    b1.update(item.getObjectId(),new UpdateListener() {
+                        @Override
+                        public void done(BmobException e) {
+                            if(e==null){
+                                Log.e("success","更新成功:"+b1.getUpdatedAt());
+                            }else{
+                                Log.e("succes","更新失败：" + e.getMessage());
+                            }
+                        }
+                    });
+
+                }
+            });
+            del.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(bill_activity.this);
+                    builder.setMessage("确定要删除选定数据吗？");
+                    builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+
+                        }
+                    });
+                    builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+
+                            b1.setObjectId(item.getObjectId());
+                            b1.delete(new UpdateListener() {
+                                @Override
+                                public void done(BmobException e) {
+                                    if(e==null){
+                                        Log.e("success","删除成功:"+b1.getRoom());
+                                    }else{
+                                        Log.e("fail","删除失败：" + e.getMessage());
+                                    }
+                                }
+                            });
+                            Intent intent = new Intent(bill_activity.this,SuccessDelActivity.class);
+                            startActivity(intent);
+                        }
+                    });
+                    builder.create().show();
+
+                }
+            });
+            checkBox.setChecked(item.isChecked);
+            checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    item.isChecked = isChecked;
+                    updateValue();
+                }
+            });
+
+            view.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    checkBox.setChecked(!checkBox.isChecked());
+                }
+            });
+
+            return view;
+        }
+
+        @Override
+        public Object getRowItem(int section, int row) {
+            if (section < 0)
+                return null;
+
+            Object[] key = map.keySet().toArray();
+
+            return map.get((String) key[section]).get(row);
+        }
+
+        @Override
+        public View getSectionHeaderView(int section, View convertView, ViewGroup parent) {
+            View view = LayoutInflater.from(mContext).inflate(R.layout.item_header, null);
+
+            Object[] keys = map.keySet().toArray();
+
+            String key = (String) keys[section];
+
+            ((TextView) view.findViewById(R.id.month)).setText(key.split("-")[1]+"月");
+
+            return view;
+        }
+
+        @Override
+        public boolean hasSectionHeaderView(int section) {
+            return true;
         }
     }
-
-    // public void onItemClick(View view){
-
-    // }
-
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -191,66 +399,76 @@ public class bill_activity extends AppCompatActivity {
                 builder.setTitle("收款");
                 builder.setView(textEntryView);
 
-                final EditText num =  textEntryView.findViewById(R.id.num);
-                final EditText bill = textEntryView.findViewById(R.id.bill);
-                final EditText waterBill =  textEntryView.findViewById(R.id.waterBill);
-                final EditText electricityBill = textEntryView.findViewById(R.id.electricityBill);
+                final EditText num = (EditText) textEntryView.findViewById(R.id.num);
+                final EditText bill = (EditText) textEntryView.findViewById(R.id.bill);
+                final EditText waterBill = (EditText) textEntryView.findViewById(R.id.waterBill);
+                final EditText electricityBill = (EditText) textEntryView.findViewById(R.id.electricityBill);
 
 
                 builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
 
+
                     }
                 });
                 builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
+
                         String numInfo = num.getText().toString();
-                        if (numInfo.equals("")){
-                            Toast.makeText(bill_activity.this,"房间号不能为空",Toast.LENGTH_SHORT).show();
-                        }else {
+                        if (numInfo.equals("")) {
+                            Toast.makeText(bill_activity.this, "房间号不能为空", Toast.LENGTH_SHORT).show();
+                        } else {
+                            double billInfo = Double.parseDouble(bill.getText().toString());
+                            double waterBillInfo = Double.parseDouble(waterBill.getText().toString());
+                            double electricityBillInfo = Double.parseDouble(electricityBill.getText().toString());
 
-                            String billInfo = bill.getText().toString();
-                            String waterBillInfo = waterBill.getText().toString();
-                            String electricityBillInfo = electricityBill.getText().toString();
-                            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                            int month = Calendar.getInstance().get(Calendar.MONTH)+1;
-                            String m =month+"月";
-                            String t = format.format(new Date());
-                            double to = Double.parseDouble(billInfo) + Double.parseDouble(waterBillInfo) + Double.parseDouble(electricityBillInfo);
-                            SQLiteDatabase db = dbHelper.getWritableDatabase();
-                            Cursor cursor = db.rawQuery("select * from bill where room=?", new String[]{numInfo});
-                            if (cursor.moveToNext()) {
-                                s1 = cursor.getString(cursor.getColumnIndex("room"));
+                            if (!numInfo.equals("")) {
+                                if (numInfo.matches("[0-9]{3}")) {
+                                    if (bill.getText().toString().matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
+                                        if (waterBill.getText().toString().matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
+                                            if (electricityBill.getText().toString().matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
+                                                b1.setRoom(numInfo);
+                                                b1.setBill(billInfo + waterBillInfo + electricityBillInfo);
+                                                b1.setWaterBill(waterBillInfo);
+                                                b1.setElectricityBill(electricityBillInfo);
+                                                b1.setRoomBill(billInfo);
+                                                b1.setStatus("未缴费");
+                                                b1.save(new SaveListener<String>() {
+                                                    @Override
+                                                    public void done(String s, BmobException e) {
+                                                        if (e == null) {
+                                                            Log.e("success", "添加数据成功，返回objectId为：" + s);
+                                                        } else {
+                                                            Log.e("fail", "创建数据失败：" + e.getMessage());
+                                                        }
+                                                    }
+                                                });
 
-                            }
+                                            } else {
+                                                Toast.makeText(bill_activity.this, "电费数额只能带两位小数", Toast.LENGTH_SHORT).show();
+                                            }
 
-                            if (numInfo.matches("[0-9]{3}")) {
-                                if (billInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
-                                    if (waterBillInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
-                                        if (electricityBillInfo.matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
-                                            db.execSQL("insert into bill(room,bill,waterBill,electricityBill,month,time,total)values(?,?,?,?,?,?,?)",
-                                                    new String[]{numInfo, billInfo, waterBillInfo, electricityBillInfo,m, t, String.valueOf(to)});
                                         } else {
-                                            Toast.makeText(bill_activity.this, "电费数额只能带两位小数", Toast.LENGTH_SHORT).show();
+                                            Toast.makeText(bill_activity.this, "水费数额只能带两位小数", Toast.LENGTH_SHORT).show();
                                         }
 
                                     } else {
-                                        Toast.makeText(bill_activity.this, "水费数额只能带两位小数", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(bill_activity.this, "房租数额只能带两位小数", Toast.LENGTH_SHORT).show();
                                     }
 
                                 } else {
-                                    Toast.makeText(bill_activity.this, "房租数额只能带两位小数", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(bill_activity.this, "房号为3位纯数字", Toast.LENGTH_SHORT).show();
+
                                 }
-
                             } else {
-                                Toast.makeText(bill_activity.this, "房号为3位纯数字", Toast.LENGTH_SHORT).show();
-
+                                Toast.makeText(bill_activity.this, "房号不能为空", Toast.LENGTH_SHORT).show();
                             }
                         }
 
-
+                        Intent intent = new Intent(bill_activity.this,SuccessAddActivity.class);
+                        startActivity(intent);
 
                     }
 
@@ -271,13 +489,7 @@ public class bill_activity extends AppCompatActivity {
                 builder1.setPositiveButton("确定", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        if (data != null){
-                            SQLiteDatabase db = dbHelper.getReadableDatabase();
-                            db.execSQL("delete from bill " );
-                            db.close();
-                            data.clear();
-                            Adapter.notifyDataSetChanged();
-                        }
+
                     }
                 });
                 builder1.create().show();
@@ -288,151 +500,6 @@ public class bill_activity extends AppCompatActivity {
 
         }
         return true;
-    }
-
-    public class MyAdapter extends SectionedRecyclerViewAdapter<HeaderHolder,MyAdapter.DescHolder,RecyclerView.ViewHolder>{
-        public ArrayList<Bill> billList;
-        private LayoutInflater mInflater;
-        private SparseBooleanArray mBooleanMap;
-
-        public MyAdapter(ArrayList<Bill> billList) {
-            this.billList = billList;
-            mInflater = LayoutInflater.from(getBaseContext());
-            mBooleanMap = new SparseBooleanArray();
-        }
-
-        @Override
-        protected int getSectionCount() {
-
-
-            return  months.size();
-        }
-        @Override
-        protected int getItemCountForSection(int section) {
-            int count =month1.size() ;
-            if (count >= 0 && !mBooleanMap.get(section)) {
-                count = 0;
-            }
-               return  count;
-
-        }
-
-
-        //是否有footer布局
-        @Override
-        protected boolean hasFooterInSection(int section) {
-            return false;
-        }
-
-        @Override
-        protected HeaderHolder onCreateSectionHeaderViewHolder(ViewGroup parent, int viewType) {
-            return new HeaderHolder(mInflater.inflate(R.layout.bill_title_item, parent, false));
-        }
-
-        @Override
-        protected RecyclerView.ViewHolder onCreateSectionFooterViewHolder(ViewGroup parent, int viewType) {
-            return null;
-        }
-
-        @Override
-        protected DescHolder onCreateItemViewHolder(ViewGroup parent, int viewType) {
-            return new DescHolder(mInflater.inflate(R.layout.item_renter,parent, false));
-        }
-
-        @Override
-        protected void onBindSectionHeaderViewHolder(final HeaderHolder holder, final int section) {
-            holder.openView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    boolean isOpen = mBooleanMap.get(section);
-                    String text = isOpen ? "展开" : "关闭";
-                    mBooleanMap.put(section, !isOpen);
-                    holder.openView.setText(text);
-                    notifyDataSetChanged();
-                }
-            });
-
-            holder.titleView.setText(months.get(section));
-            holder.openView.setText(mBooleanMap.get(section) ? "关闭" : "展开");
-
-        }
-
-
-        @Override
-        protected void onBindSectionFooterViewHolder(RecyclerView.ViewHolder holder, int section) {
-
-        }
-
-        @Override
-        protected void onBindItemViewHolder(DescHolder holder, int section, int position) {
-
-
-        holder.mTv.setText(months.get(section));
-
-
-
-
-
-        }
-
-        class DescHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
-            TextView mTv;
-            Button mDel;
-
-
-            public DescHolder(View itemView){
-                super(itemView);
-                mTv = itemView.findViewById(R.id.text_view1);
-                mTv.setOnClickListener(this);
-                mDel= itemView.findViewById(R.id.del_button);
-                mDel.setOnClickListener(this);
-            }
-
-            @Override
-            public void onClick(View view ) {
-                switch (view.getId()){
-                    case R.id.text_view1:
-                        int clickPosition =Adapter.getItemPosition(getAdapterPosition());
-                        String nameInfo = billList.get(clickPosition).getRoom().toString();
-                        SQLiteDatabase db = dbHelper.getWritableDatabase();
-                        Cursor cursor = db.rawQuery("select * from bill where room=?",new String[]{nameInfo});
-                        while (cursor.moveToNext()) {
-                            ss = cursor.getString(cursor.getColumnIndex("room"));
-                            s2 = cursor.getString(cursor.getColumnIndex("time"));
-                            s3 = cursor.getString(cursor.getColumnIndex("total"));
-                            s4 = cursor.getString(cursor.getColumnIndex("waterBill"));
-                            s5 = cursor.getString(cursor.getColumnIndex("electricityBill"));
-
-
-                        }
-                        Toast.makeText(bill_activity.this,"房间号为："+ss+"\n时间："+s2+"\n上月水费金额为："+s4+"\n上月电费金额为："+s5+"\n上月房租总金额为："+s3,Toast.LENGTH_SHORT).show();
-
-                        break;
-                    case R.id.del_button:
-                        int clickPosition1 = Adapter.getItemPosition(getAdapterPosition());
-                        String deleteText =  billList.get(clickPosition1).getRoom().toString();
-                        SQLiteDatabase db1 = dbHelper.getReadableDatabase();
-                        Cursor cursor1 = db1.rawQuery("select * from bill where room=?",new String[]{deleteText});
-                        while (cursor1.moveToNext()){
-                            mName = cursor1.getString(cursor1.getColumnIndex("room"));
-                            if (deleteText.equals(mName)){
-                                deleteData();
-                                db1.close();
-                                break;
-                            }
-                        }
-                        data.remove(clickPosition1);
-                        Adapter.notifyDataSetChanged();
-                        break;
-                }
-
-            }
-        }
-
-    }
-    public void deleteData(){
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        db.execSQL("delete from bill where room='"+ mName+"'" );
     }
 
 }

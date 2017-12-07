@@ -33,7 +33,7 @@ public class admin_activity extends AppCompatActivity{
         house_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(admin_activity.this,house_activity.class);
+                Intent intent = new Intent(admin_activity.this,HouseActivity.class);
                 startActivity(intent);
 
             }

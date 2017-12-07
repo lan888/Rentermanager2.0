@@ -2,8 +2,6 @@ package com.example.ian.rentermanager2;
 
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -15,6 +13,7 @@ import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -26,7 +25,19 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.ian.rentermanager2.entity.Renters;
+import com.example.ian.rentermanager2.entity.Rooms;
+
 import java.util.ArrayList;
+import java.util.List;
+
+import cn.bmob.v3.BmobQuery;
+import cn.bmob.v3.datatype.BmobQueryResult;
+import cn.bmob.v3.exception.BmobException;
+import cn.bmob.v3.listener.FindListener;
+import cn.bmob.v3.listener.SQLQueryListener;
+import cn.bmob.v3.listener.SaveListener;
+import cn.bmob.v3.listener.UpdateListener;
 
 /**
  * Created by Ian on 2017/8/17 0017.
@@ -38,8 +49,10 @@ public class renter_activity extends AppCompatActivity {
     private ArrayList<String> data = new ArrayList<String>();
     private int lastVisibleItem;
     private MyAdapter Adapter;
+    private List<Renters> rawQuery;
 
-    private myDatabaseHelper dbHelper;
+    Renters r1 = new Renters();
+    Rooms r2 = new Rooms();
     String s = null;
     String ss = null;
     String s2 = null;
@@ -48,7 +61,8 @@ public class renter_activity extends AppCompatActivity {
     String s5 = null;
     String s6 = null;
     String s7 = null;
-    String mName = null;
+    String mName ;
+    String id;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -60,12 +74,12 @@ public class renter_activity extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(renter_activity.this,new_admin_activity.class);
+                Intent intent = new Intent(renter_activity.this,NewAdminActivity.class);
                 startActivity(intent);
             }
         });
 
-        dbHelper = myDatabaseHelper.getInstance(this);
+
 
         initData();
         initView();
@@ -73,14 +87,15 @@ public class renter_activity extends AppCompatActivity {
 
     }
 
+
     private void initView() {
         final LinearLayoutManager manager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         final SwipeRefreshLayout srl = (SwipeRefreshLayout) findViewById(R.id.refresh);
-
         mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-        Adapter = new MyAdapter(data);
-        mRecyclerView.setAdapter(Adapter);
         mRecyclerView.setLayoutManager(manager);
+
+
+
         mRecyclerView.addOnItemTouchListener(new SwipeItemLayout.OnSwipeItemTouchListener(this));
         mRecyclerView.addItemDecoration(new DividerItemDecoration(this,DividerItemDecoration.VERTICAL));
 
@@ -104,7 +119,7 @@ public class renter_activity extends AppCompatActivity {
             public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
                 super.onScrollStateChanged(recyclerView, newState);
                 if (newState == RecyclerView.SCROLL_STATE_IDLE && lastVisibleItem == Adapter.getItemCount()) {
-                    initData();
+
                 }
                 new Handler().postDelayed(new Runnable() {
                     @Override
@@ -125,12 +140,25 @@ public class renter_activity extends AppCompatActivity {
     }
 
     private void initData() {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        Cursor cursor = db.rawQuery("select name from renter", null);
-        while (cursor.moveToNext()) {
-            s = cursor.getString(cursor.getColumnIndex("name"));
-            data.add(s);
-        }
+        BmobQuery<Renters> query = new BmobQuery<Renters>();
+        query.findObjects(new FindListener<Renters>(){
+            @Override
+            public void done(List<Renters> list, BmobException e) {
+                if (e == null) {
+                    for (Renters r : list) {
+                        s = r.getName();
+                        data.add(s);
+                    }
+                    rawQuery=list;
+                    Adapter = new MyAdapter(data);
+                    mRecyclerView.setAdapter(Adapter);
+                }else {
+                    Log.i("bmob","失败："+e.getMessage()+","+e.getErrorCode());
+                }
+            }
+
+        });
+
     }
 
    // public void onItemClick(View view){
@@ -173,34 +201,98 @@ public class renter_activity extends AppCompatActivity {
                 builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        String renter_nameInfo = renter_name.getText().toString();
-                        String renter_roomInfo = renter_room.getText().toString();
-                        String renter_sexInfo = (String)renter_sex.getSelectedItem();
-                        String renter_companyInfo = renter_company.getText().toString();
-                        String renter_phoneInfo = renter_phone.getText().toString();
-                        String renter_idCardInfo = renter_idCard.getText().toString();
-                        String renter_memberInfo = renter_member.getText().toString();
-                        String s1 = null;
-                        SQLiteDatabase db = dbHelper.getWritableDatabase();
-                        Cursor cursor = db.rawQuery("select * from renter where name=?",new String[]{renter_nameInfo});
-                        if (cursor.moveToNext()) {
-                            s1 = cursor.getString(cursor.getColumnIndex("name"));
+                        final String renter_nameInfo = renter_name.getText().toString();
+                        final String renter_roomInfo = renter_room.getText().toString();
+                        final String renter_sexInfo = (String)renter_sex.getSelectedItem();
+                        final String renter_companyInfo = renter_company.getText().toString();
+                        final String renter_phoneInfo = renter_phone.getText().toString();
+                        final String renter_idCardInfo = renter_idCard.getText().toString();
+                        final String renter_memberInfo = renter_member.getText().toString();
 
-                        }
+
                         if (!renter_nameInfo.equals("")){
                             if (renter_roomInfo.matches("[0-9]{3}")){
                                 if (!renter_companyInfo.equals("")){
                                     if (renter_phoneInfo.matches("[1][358]\\d{9}")){
                                         if (renter_idCardInfo.matches("(^[1-9]\\d{5}(18|19|([23]\\d))\\d{2}((0[1-9])|(10|11|12))(([0-2][1-9])|10|20|30|31)\\d{3}[0-9Xx]$)|(^[1-9]\\d{5}\\d{2}((0[1-9])|(10|11|12))(([0-2][1-9])|10|20|30|31)\\d{2}[0-9Xx]$)")){
                                             if (renter_memberInfo.matches("[0-9]")){
-                                                if (renter_nameInfo.equals(s1)){
-                                                    Toast.makeText(renter_activity.this, "租户重复，请重新填写", Toast.LENGTH_SHORT).show();
-                                                }else {
-                                                    db.execSQL("insert into renter(name,room,sex,company,phone,idcard,member)values(?,?,?,?,?,?,?)",
-                                                            new String[]{renter_nameInfo, renter_roomInfo,renter_sexInfo, renter_companyInfo, renter_phoneInfo,renter_idCardInfo,renter_memberInfo});
-                                                    Toast.makeText(renter_activity.this, "已添加租户信息，请下滑刷新一下", Toast.LENGTH_SHORT).show();
-                                                    db.execSQL("update house set status='是' where room=?",new String[]{renter_roomInfo});
-                                                }
+                                                String bql = "select name from Renters where name = ?";
+                                                new BmobQuery<Renters>().doSQLQuery(bql, new SQLQueryListener<Renters>() {
+                                                    @Override
+                                                    public void done(BmobQueryResult bmobQueryResult, BmobException e) {
+                                                        if (e==null){
+                                                            List<Renters> list = (List<Renters>) bmobQueryResult.getResults();
+                                                            if (list!=null&&list.size()>0){
+                                                                for (Renters r : list){
+                                                                    mName = r.getName();
+
+                                                                }
+                                                                Log.e("name","查询成功"+mName);
+                                                            }
+                                                        }else {
+                                                            Log.e("smile", "错误码："+e.getErrorCode()+"，错误描述："+e.getMessage());
+                                                        }
+                                                        if (renter_nameInfo.equals(mName)){
+                                                            Toast.makeText(renter_activity.this, "租户重复，请重新填写", Toast.LENGTH_SHORT).show();
+                                                        }else {
+                                                            r1.setName(renter_nameInfo);
+                                                            r1.setRoom(renter_roomInfo);
+                                                            r1.setSex(renter_sexInfo);
+                                                            r1.setPhone(renter_phoneInfo);
+                                                            r1.setMember(renter_memberInfo);
+                                                            r1.setIdcard(renter_idCardInfo);
+                                                            r1.setCompany(renter_companyInfo);
+                                                            r1.save(new SaveListener<String>() {
+                                                                @Override
+                                                                public void done(String s, BmobException e) {
+                                                                    if(e==null){
+
+                                                                        Log.e("success","添加数据成功，返回objectId为："+s) ;
+                                                                    }else{
+                                                                        Log.e("fail", "创建数据失败：" + e.getMessage());
+                                                                    }
+                                                                }
+                                                            });
+
+                                                            String bql = "select getObjectId from Rooms where room = ?";
+                                                            new BmobQuery<Rooms>().doSQLQuery(bql, new SQLQueryListener<Rooms>() {
+                                                                        @Override
+                                                                        public void done(BmobQueryResult bmobQueryResult, BmobException e) {
+                                                                            if (e == null) {
+                                                                                List<Rooms> list = (List<Rooms>) bmobQueryResult.getResults();
+                                                                                if (list != null && list.size() > 0) {
+                                                                                    for (Rooms r : list) {
+                                                                                        id = r.getObjectId();
+
+                                                                                    }
+                                                                                    r2.setStatus("已出租");
+                                                                                    r2.update(id,new UpdateListener() {
+                                                                                        @Override
+                                                                                        public void done(BmobException e) {
+                                                                                            if(e==null){
+                                                                                                Log.e("success","更新成功:"+r2.getUpdatedAt());
+                                                                                            }else{
+                                                                                                Log.e("succes","更新失败：" + e.getMessage());
+                                                                                            }
+                                                                                        }
+                                                                                    });
+                                                                                    Log.e("name", "查询成功" + id);
+                                                                                }
+                                                                            } else {
+                                                                                Log.e("smile", "错误码：" + e.getErrorCode() + "，错误描述：" + e.getMessage());
+                                                                            }
+                                                                        }
+                                                                        },renter_roomInfo);
+
+
+                                                            Toast.makeText(renter_activity.this, "已添加租户信息，请下滑刷新一下", Toast.LENGTH_SHORT).show();
+
+                                                        }
+                                                    }
+
+                                                },renter_nameInfo);
+
+
                                             }else {
                                                 Toast.makeText(renter_activity.this, "请用阿拉伯数字填写准确租住人数", Toast.LENGTH_SHORT).show();
                                             }
@@ -242,14 +334,10 @@ public class renter_activity extends AppCompatActivity {
                 builder1.setPositiveButton("确定", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        if (data != null){
-                            SQLiteDatabase db = dbHelper.getReadableDatabase();
-                            db.execSQL("delete from renter " );
-                            db.execSQL("update house set status='否'");
-                            db.close();
+                             deleteData(rawQuery);
                             data.clear();
                             Adapter.notifyDataSetChanged();
-                        }
+
                     }
                 });
                 builder1.create().show();
@@ -304,35 +392,50 @@ public class renter_activity extends AppCompatActivity {
                     case R.id.text_view1:
                         int clickPosition = mRecyclerView.getChildAdapterPosition(itemView);
                         String nameInfo = data.get(clickPosition).toString();
-                        SQLiteDatabase db = dbHelper.getWritableDatabase();
-                        Cursor cursor = db.rawQuery("select * from renter where name=?",new String[]{nameInfo});
-                        while (cursor.moveToNext()) {
-                            ss = cursor.getString(cursor.getColumnIndex("name"));
-                            s2 = cursor.getString(cursor.getColumnIndex("room"));
-                            s3 = cursor.getString(cursor.getColumnIndex("sex"));
-                            s4 = cursor.getString(cursor.getColumnIndex("company"));
-                            s5 = cursor.getString(cursor.getColumnIndex("phone"));
-                            s6 = cursor.getString(cursor.getColumnIndex("idcard"));
-                            s7 = cursor.getString(cursor.getColumnIndex("member"));
+                        BmobQuery query = new BmobQuery<Renters>();
+                        query.addWhereEqualTo("name",nameInfo);
+                        query.setLimit(1);
+                        query.findObjects(new FindListener<Renters>() {
+                            @Override
+                            public void done(List<Renters> list, BmobException e) {
+                                if(e==null){
+                                    Log.e("success","查询成功:"+list.size()+"条数据");
+                                    for (  Renters r  : list){
+                                        ss=r.getName();
+                                        s2=r.getRoom();
+                                        s3=r.getSex();
+                                        s4=r.getCompany();
+                                        s5=r.getPhone();
+                                        s6=r.getIdcard();
+                                        s7=r.getMember();
+                                    }
+                                    Toast.makeText(renter_activity.this,"租户姓名："+ss+"\n租户房间号："+s2+"\n租户性别："
+                                                    +s3+"\n租户工作单位："+s4+"\n手机号码："+ s5+"\n租户身份证号："+s6+"\n租户人数："+s7,
+                                            Toast.LENGTH_SHORT).show();
+                                }else {
+                                    Log.i("bmob","失败："+e.getMessage()+","+e.getErrorCode());
+                                }
+                            }
 
-                        }
-                        Toast.makeText(renter_activity.this,"租户姓名："+ss+"\n租户房间号："+s2+"\n租户性别："+s3+"\n租户工作单位："+s4+"\n手机号码："+s5+"\n租户身份证号："+s6+"\n租户人数："+s7,Toast.LENGTH_SHORT).show();
+                        });
+
+
 
                         break;
                     case R.id.del_button:
                         int clickPosition1 = mRecyclerView.getChildAdapterPosition(itemView);
-                        String deleteText = data.get(clickPosition1).toString();
-                        SQLiteDatabase db1 = dbHelper.getReadableDatabase();
-                        Cursor cursor1 = db1.rawQuery("select * from renter where name=?",new String[]{deleteText});
-                        while (cursor1.moveToNext()){
-                             mName = cursor1.getString(cursor1.getColumnIndex("name"));
-                            if (deleteText.equals(mName)){
-                                deleteData();
-                                db1.execSQL("update house set status='否' where room=?",new String[]{s2});
-                                db1.close();
-                                break;
+                        String deleteText = rawQuery.get(clickPosition1).getObjectId().toString();
+                        r1.setObjectId(deleteText);
+                        r1.delete(new UpdateListener() {
+                            @Override
+                            public void done(BmobException e) {
+                                if(e==null){
+                                    Log.e("success","删除成功:"+r1.getRoom());
+                                }else{
+                                    Log.e("fail","删除失败：" + e.getMessage());
+                                }
                             }
-                        }
+                        });
                         data.remove(clickPosition1);
                         Adapter.notifyDataSetChanged();
                         break;
@@ -341,9 +444,23 @@ public class renter_activity extends AppCompatActivity {
             }
         }
     }
-    public void deleteData(){
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        db.execSQL("delete from renter where name='"+ mName+"'" );
-    }
+    public void deleteData(List<Renters> list){
+        for (Renters r :list){
+             String id=r.getObjectId();
+            r1.setObjectId(id);
+            r1.delete(new UpdateListener() {
+                @Override
+                public void done(BmobException e) {
+                    if(e==null){
+                        Log.e("success","删除成功:");
+                    }else{
+                        Log.e("fail","删除失败：" + e.getMessage());
+                    }
+                }
+            });
+
+        }
+        }
+
 
 }

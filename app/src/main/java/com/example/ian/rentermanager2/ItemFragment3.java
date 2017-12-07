@@ -1,20 +1,24 @@
 package com.example.ian.rentermanager2;
 
 
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.ian.rentermanager2.entity.Bill;
+
 import java.util.ArrayList;
 import java.util.List;
 
+import cn.bmob.v3.BmobQuery;
+import cn.bmob.v3.exception.BmobException;
+import cn.bmob.v3.listener.FindListener;
 
 
 /**
@@ -24,34 +28,19 @@ import java.util.List;
 public class ItemFragment3 extends Fragment {
 
     // TODO: Customize parameters
-    private int mColumnCount = 1;
-    private myDatabaseHelper dbHelper;
     private MyItemRecyclerViewAdapter mAdapter;
-    private List<Bill> mDatas = new ArrayList<Bill>();
+    private List<String> mDatas = new ArrayList<String>();
+    private List<String> mDataTime = new ArrayList<String>();
     String pi = null;
     String po =null;
-    String pp =null;
-    String pa = null;
+    double pp ;
+
     public ItemFragment3() {
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        dbHelper = myDatabaseHelper.getInstance(getActivity());
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-            Cursor cursor = db.rawQuery("select * from bill", null);
-
-            while (cursor.moveToNext()) {
-
-                String room = cursor.getString(cursor.getColumnIndex("room"));
-                String time = cursor.getString(cursor.getColumnIndex("time"));
-                String month = cursor.getString(cursor.getColumnIndex("month"));
-
-               mDatas.add(new Bill(room,time,month));
-
-        }
-
 
 
 
@@ -60,23 +49,41 @@ public class ItemFragment3 extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_item_list2, container, false);
+       final View view = inflater.inflate(R.layout.fragment_item_list2, container, false);
 
         // Set the adapter
         if (view instanceof RecyclerView) {
-            RecyclerView recyclerView = (RecyclerView) view;
-            mAdapter = new MyItemRecyclerViewAdapter(mDatas);
-            recyclerView.setAdapter(mAdapter);
+            BmobQuery<Bill> query = new BmobQuery<Bill>();
+            query.findObjects(new FindListener<Bill>(){
+                @Override
+                public void done(List<Bill> list, BmobException e) {
+                    if (e == null) {
+                        for (Bill r : list) {
+                            String s = r.getRoom();
+                            String b = r.getCreatedAt();
+                            mDatas.add(s);
+                            mDataTime.add(b);
+                        }
+                        RecyclerView recyclerView = (RecyclerView) view;
+                        mAdapter = new MyItemRecyclerViewAdapter(mDatas);;
+                        recyclerView.setAdapter(mAdapter);
+
+                    }else {
+                        Log.i("bmob","失败："+e.getMessage()+","+e.getErrorCode());
+                    }
+                }
+
+            });
         }
         return view;
     }
     public class MyItemRecyclerViewAdapter extends RecyclerView.Adapter<MyItemRecyclerViewAdapter.ViewHolder> {
 
 
-        private List<Bill> mData;
+        private List<String> mData;
 
 
-        public MyItemRecyclerViewAdapter(List<Bill> data) {
+        public MyItemRecyclerViewAdapter(List<String> data) {
             this.mData = data;
 
         }
@@ -90,9 +97,10 @@ public class ItemFragment3 extends Fragment {
 
         @Override
         public void onBindViewHolder(MyItemRecyclerViewAdapter.ViewHolder holder, int position) {
-            holder.mContent.setText(mData.get(position).getRoom());
+            holder.mContent.setText(mData.get(position));
             holder.mId.setText(String.valueOf(position+1));
-            holder.mTime.setText(mData.get(position).getTime());
+            holder.mTime.setText(mDataTime.get(position));
+
         }
 
         @Override
@@ -118,16 +126,27 @@ public class ItemFragment3 extends Fragment {
 
             @Override
             public void onClick(View view) {
-                        String roomInfo = mDatas.get(getAdapterPosition()).getRoom().toString();
-                        SQLiteDatabase db = dbHelper.getWritableDatabase();
-                        Cursor cursor = db.rawQuery("select * from bill where room=?",new String[]{roomInfo});
-                        while (cursor.moveToNext()) {
-                            pi = cursor.getString(cursor.getColumnIndex("room"));
-                            po = cursor.getString(cursor.getColumnIndex("time"));
-                            pp = cursor.getString(cursor.getColumnIndex("total"));
-                           // pa = cursor.getString(cursor.getColumnIndex("status"));
+                String roomInfo = mDatas.get(getAdapterPosition());
+                BmobQuery query = new BmobQuery<Bill>();
+                query.addWhereEqualTo("room",roomInfo);
+                query.setLimit(1);
+                query.findObjects(new FindListener<Bill>() {
+                    @Override
+                    public void done(List<Bill> list, BmobException e) {
+                        if(e==null){
+                            Log.e("success","查询成功:"+list.size()+"条数据");
+                            for (  Bill r  : list){
+                                pi = r.getRoom();
+                                po = r.getCreatedAt();
+                                pp = r.getBill();
+                            }
+                            Toast.makeText(getActivity(),"房间号为："+pi+"\n时间："+po+"\n上月房租金额为："+pp,Toast.LENGTH_SHORT).show();
+                        }else {
+                            Log.i("bmob","失败："+e.getMessage()+","+e.getErrorCode());
                         }
-                        Toast.makeText(getActivity(),"房间号为："+pi+"\n时间："+po+"\n上月房租金额为："+pp,Toast.LENGTH_SHORT).show();
+                    }
+
+                });
 
 
                 }
