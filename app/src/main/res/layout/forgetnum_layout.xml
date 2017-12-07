@@ -14,17 +14,7 @@
         android:gravity="center"
         android:text="找回密码"
         android:textSize="20sp"/>
-    <EditText
-        android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:id="@+id/admin_register_name1"
-        android:layout_gravity="center"
-        android:layout_marginLeft="10dp"
-        android:layout_marginRight="10dp"
-        android:background="@mipmap/input_box"
-        android:gravity="center"
-        android:layout_marginTop="100dp"
-        android:hint="请输入账户"/>
+
     <EditText
         android:id="@+id/admin_register_info1"
         android:layout_width="wrap_content"
@@ -35,7 +25,7 @@
         android:layout_marginTop="10dp"
         android:background="@mipmap/input_box"
         android:gravity="center"
-        android:hint="请填写注册码" />
+        android:hint="请填写注册的电子邮箱" />
     <Button
         android:id="@+id/find"
         style="@style/common_button_style"
