@@ -3,16 +3,14 @@ package com.example.ian.rentermanager2;
 import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.MediaStore;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -31,7 +29,6 @@ import com.example.ian.rentermanager2.permission.PermissionManager;
 import com.example.ian.rentermanager2.utils.FileUtils;
 
 import java.io.File;
-import java.util.List;
 
 import cn.bmob.v3.Bmob;
 import cn.bmob.v3.BmobUser;
@@ -47,9 +44,10 @@ public class MainActivity extends AppCompatActivity {
     private TextView register;//注册
     private TextView forgetNum;//忘记密码
     private RoundImageView mImageView;//头像
+
     PermissionManager helper;
 
-    BmobUser user = new BmobUser();
+
     MyUser mUser = new MyUser();
     private Bitmap mBitmap;
     protected static final int CHOOSE_PICTURE = 0;
@@ -58,13 +56,15 @@ public class MainActivity extends AppCompatActivity {
     private static final int CROP_SMALL_PICTURE = 2;
     private String mFilePath;
     private String mFileName;
-
+    private String img_url1;
+    private BmobFile uri;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         Bmob.initialize(this,"26a7be21ef92ba03984d461048b40981");
+
 
         FileUtils.init();
 
@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
                 //添加权限请求码
                 .addRequestCode(MainActivity.TAKE_PICTURE)
                 //设置权限，可以添加多个权限
-                .permissions(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.READ_PHONE_STATE,Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                .permissions(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.READ_PHONE_STATE,Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.CAMERA)
                 //设置权限监听器
                 .setPermissionsListener(new PermissionListener() {
 
@@ -123,15 +123,15 @@ public class MainActivity extends AppCompatActivity {
                 String nameInfo = name.getText().toString();
                 String passwordInfo = password.getText().toString();
                 //从数据库获取密码并判断是否相同
-               user.setUsername(nameInfo);
-               user.setPassword(passwordInfo);
-               user.login(new SaveListener<BmobUser>() {
+                mUser.setUsername(nameInfo);
+                mUser.setPassword(passwordInfo);
+                mUser.login(new SaveListener<MyUser>() {
 
                    @Override
-                   public void done(BmobUser bmobUser, BmobException e) {
+                   public void done(MyUser s, BmobException e) {
                        if(e==null){
                            Toast.makeText(MainActivity.this,"登录成功",Toast.LENGTH_SHORT).show();
-                           BmobUser user = BmobUser.getCurrentUser();
+                            MyUser user = BmobUser.getCurrentUser(MyUser.class);
                            NewAdminActivity.actionStart(MainActivity.this,user.getUsername());
                            //如果是自定义用户对象MyUser，可通过MyUser user = BmobUser.getCurrentUser(MyUser.class)获取自定义用户信息
                        }else{
@@ -184,17 +184,17 @@ public class MainActivity extends AppCompatActivity {
                         String firstPasswordInfo = firstPassword.getText().toString();
                         String secondPasswordInfo = secondPassword.getText().toString();
                         String mailInfo = mail.getText().toString();
-
                         if (phoneInfo.matches("[1][358]\\d{9}")) {
                             if (!nameInfo.equals("")) {
                                 if (firstPasswordInfo.matches("[0-9]{6}")) {
                                     if (firstPasswordInfo.equals(secondPasswordInfo)) {
                                         if (!mailInfo.equals("")) {
-                                            user.setUsername(nameInfo);
-                                            user.setPassword(secondPasswordInfo);
-                                            user.setEmail(mailInfo);
-                                            user.setMobilePhoneNumber(phoneInfo);
-                                            user.signUp(new SaveListener<BmobUser>() {
+                                            mUser.setUsername(nameInfo);
+                                            mUser.setPassword(secondPasswordInfo);
+                                            mUser.setEmail(mailInfo);
+                                            mUser.setMobilePhoneNumber(phoneInfo);
+                                            mUser.setImage(uri);
+                                            mUser.signUp(new SaveListener<BmobUser>() {
                                                 @Override
                                                 public void done(BmobUser bmobUser, BmobException e) {
                                                     if(e==null){
@@ -272,14 +272,7 @@ public class MainActivity extends AppCompatActivity {
                                 file.delete();
                             }
                             tempUri = FileUtils.getUriForFile(MainActivity.this,file);
-                            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                            List<ResolveInfo> resInfoList = getPackageManager()
-                                    .queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
-                            for (ResolveInfo resolveInfo : resInfoList) {
-                                String packageName = resolveInfo.activityInfo.packageName;
-                                grantUriPermission(packageName, tempUri, Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                        | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                            }
+                            FileUtils.startActionFile(MainActivity.this,file,"image/*");
                             FileUtils.startActionCapture(MainActivity.this,file,TAKE_PICTURE);
                         } else {
                             Log.e("main","sdcard not exists");
@@ -296,26 +289,38 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode){
             case TAKE_PICTURE:
                 cutImage(tempUri);
+                    Cursor cursor1= getContentResolver().query(tempUri,null,null,null,null);
+                    Log.e("uri","uri:"+tempUri+"\n"+cursor1);
+                    Toast.makeText(MainActivity.this,"uri:"+tempUri,Toast.LENGTH_SHORT).show();
+                    if (cursor1!=null&&cursor1.moveToFirst()){
+                        int index1=cursor1.getColumnIndex("_display_name");
+                        img_url1="/storage/emulated/0/ian/files/"+cursor1.getString(index1);
+                        cursor1.close();
+                        upload(img_url1);
+                    }else {
+                         img_url1 = tempUri.getPath();
+                        Log.e("uri1","url:"+img_url1);
+                        upload(img_url1);
+                    }
+
                 //将图片URI转换成存储路径
               //  CursorLoader cursorLoader = new CursorLoader(this,tempUri,null,null,null,null);
-                Cursor cursor1= getContentResolver().query(tempUri,null,null,null,null);
-                Log.e("uri","uri:"+tempUri+"\n"+cursor1);
-                Toast.makeText(MainActivity.this,"uri:"+tempUri,Toast.LENGTH_SHORT).show();
-                if (cursor1!=null){
-                    cursor1.moveToFirst();
-                    int index1=cursor1.getColumnIndex("_data");
-                    String img_url1=cursor1.getString(index1);
-                    cursor1.close();
-                    upload(img_url1);
-                }else {
-                    String img_url1 = tempUri.getPath();
-                    Log.e("uri1","url:"+img_url1);
-                    upload(img_url1);
-                }
 
                 break;
             case CHOOSE_PICTURE:
                 cutImage(data.getData());
+                if (data.getData()!=null){
+                    Cursor cursor= getContentResolver().query(data.getData(),null,null,null,null);
+                    Log.e("bd_uri","uri:"+data.getData()+"\n"+cursor);
+                    Toast.makeText(MainActivity.this,"uri:"+data.getData(),Toast.LENGTH_SHORT).show();
+                    if (cursor!=null&&cursor.moveToFirst()) {
+                        int index1 = cursor.getColumnIndex("_data");
+                        String img_url = cursor.getString(index1);
+                        cursor.close();
+                        upload(img_url);
+                    }
+                }
+
 
                 break;
             case CROP_SMALL_PICTURE:
@@ -332,6 +337,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         Intent intent = new Intent("com.android.camera.action.CROP");
+
+        Log.e("uri!!!","Url:"+uri);
         intent.setDataAndType(uri, "image/*");
         // 设置裁剪
         intent.putExtra("crop", "true");
@@ -341,7 +348,13 @@ public class MainActivity extends AppCompatActivity {
         // outputX outputY 是裁剪图片宽高
         intent.putExtra("outputX", 150);
         intent.putExtra("outputY", 150);
+//        Uri uritempFile = Uri.parse("file://" + "/" + Environment.getExternalStorageDirectory().getPath() + "/" + "small.jpg");
+//        intent.putExtra(MediaStore.EXTRA_OUTPUT, uritempFile);
+//        intent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.toString());
         intent.putExtra("return-data", true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        }
         startActivityForResult(intent, CROP_SMALL_PICTURE);
 
     }
@@ -358,9 +371,8 @@ public class MainActivity extends AppCompatActivity {
             mBitmap = extras.getParcelable("data");
             Drawable drawable = new BitmapDrawable(mBitmap);
             mImageView.setImageDrawable(drawable);
+
             //这里图片是方形的，可以用一个工具类处理成圆形（很多头像都是圆形，这种工具类网上很多不再详述）
-            Uri.fromFile(new File(Environment.getExternalStorageDirectory(),
-                    "img.jpg"));
 
         }
     }
@@ -370,7 +382,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void done(BmobException e) {
                 if (e == null){
-                    mUser.setImage(file);
+                    uri = file;
                     Log.e("success!!!!","上传成功"+file.getFileUrl());
                 }else {
                     Log.e("fail!!!!!","失败："+e.getMessage());

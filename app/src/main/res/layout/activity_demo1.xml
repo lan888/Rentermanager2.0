@@ -41,21 +41,21 @@
 
                     <include layout="@layout/layout_uc_head_middle" />
 
+
+                    <include layout="@layout/layout_uc_head_title" />
+
                     <android.support.v7.widget.Toolbar
                         android:id="@+id/toolbar"
                         android:layout_width="match_parent"
                         android:layout_height="@dimen/titlebar_height"
-                        android:background="@color/blue_text"
                         android:alpha="0"
+                        android:background="@color/blue_text"
                         android:tag="toolbar"
                         app:layout_collapseMode="pin"
-                        app:popupTheme="@style/Widget.AppCompat.Toolbar" />
+                        app:popupTheme="@style/Widget.AppCompat.Toolbar"/>
 
 
-                <include layout="@layout/layout_uc_head_title" />
-
-
-            </android.support.design.widget.CollapsingToolbarLayout>
+                </android.support.design.widget.CollapsingToolbarLayout>
         </android.support.design.widget.AppBarLayout>
 
         <include layout="@layout/layout_uc_content" />
@@ -65,7 +65,6 @@
             android:layout_width="70dp"
             android:layout_height="70dp"
             android:layout_marginLeft="15dp"
-            android:src="@drawable/ic_avater"
             app:civ_border_color="@android:color/white"
             app:civ_border_width="2dp"
             app:layout_anchor="@+id/middle_layout"

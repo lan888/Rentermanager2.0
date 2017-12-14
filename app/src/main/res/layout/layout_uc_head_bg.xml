@@ -20,7 +20,6 @@
             android:id="@+id/uc_zoomiv"
             android:layout_width="match_parent"
             android:layout_height="@dimen/bg_height"
-            android:background="@drawable/ic_avater"
             android:scaleType="centerCrop"
             android:tag="overScroll" />
 

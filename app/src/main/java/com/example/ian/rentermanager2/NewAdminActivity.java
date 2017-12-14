@@ -32,8 +32,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.example.ian.rentermanager2.behavior.AppBarLayoutOverScrollViewBehavior;
 import com.example.ian.rentermanager2.entity.Bill;
+import com.example.ian.rentermanager2.entity.MyUser;
 import com.example.ian.rentermanager2.entity.Renters;
 import com.example.ian.rentermanager2.entity.Rooms;
 import com.example.ian.rentermanager2.widget.CircleImageView;
@@ -48,6 +50,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cn.bmob.v3.BmobQuery;
+import cn.bmob.v3.BmobUser;
+import cn.bmob.v3.datatype.BmobFile;
 import cn.bmob.v3.exception.BmobException;
 import cn.bmob.v3.listener.FindListener;
 import cn.bmob.v3.listener.SaveListener;
@@ -67,11 +71,12 @@ public class NewAdminActivity extends AppCompatActivity {
     private RoundProgressBar progressBar;
     private ImageView mSettingIv, mMsgIv,mNavIv;
     private TextView mMsgTv,nUser,mMcTv;
-    private CircleImageView mAvater;
+    private CircleImageView mAvater,mImg;
     private CommonTabLayout mTablayout;
     private NoScrollViewPager mViewPager;
     private DrawerLayout mDrawerLayout;
     private NavigationView mNav;
+
 
     private ArrayList<CustomTabEntity> mTabEntities = new ArrayList<>();
     private List<Fragment> fragments;
@@ -168,6 +173,7 @@ public class NewAdminActivity extends AppCompatActivity {
 
             final View headerView = mNav.getHeaderView(0);
             nUser = headerView.findViewById(R.id.nav_user);
+            mImg = headerView.findViewById(R.id.nav_civ);
             final Intent intent = getIntent();
             String s1 = intent.getStringExtra("i");
             if (s1!=null){
@@ -179,6 +185,15 @@ public class NewAdminActivity extends AppCompatActivity {
             SharedPreferences pref = getSharedPreferences("data",MODE_PRIVATE);
             String s2 = pref.getString("name","");
             nUser.setText(s2);
+
+            MyUser user = BmobUser.getCurrentUser(MyUser.class);
+                BmobFile file = user.getImage();
+                String url = file.getFileUrl();
+                Glide.with(NewAdminActivity.this).load(url).asBitmap().into(mAvater);
+                mZoomIv.setTag(null);
+                Glide.with(NewAdminActivity.this).load(url).asBitmap().into(mZoomIv);
+                mZoomIv.setTag(url);
+                Glide.with(NewAdminActivity.this).load(url).asBitmap().into(mImg);
 
 
 
@@ -193,22 +208,23 @@ public class NewAdminActivity extends AppCompatActivity {
 
 
     private void findId(){
-        mZoomIv = (ImageView) findViewById(R.id.uc_zoomiv);
-        mToolBar = (Toolbar) findViewById(R.id.toolbar);
-        titleContainer = (ViewGroup) findViewById(R.id.title_layout);
-        mAppBarLayout = (AppBarLayout) findViewById(R.id.appbar_layout);
-        titleCenterLayout = (ViewGroup) findViewById(R.id.title_center_layout);
-        progressBar = (RoundProgressBar) findViewById(R.id.uc_progressbar);
-        mMsgTv = (TextView)findViewById(R.id.frag_uc_follow_tv);
-        mMcTv = (TextView)findViewById(R.id.frag_uc_msg_tv);
-        mSettingIv = (ImageView) findViewById(R.id.uc_setting_iv);
-        mMsgIv = (ImageView) findViewById(R.id.uc_msg_iv);
-        mAvater = (CircleImageView) findViewById(R.id.uc_avater);
-        mTablayout = (CommonTabLayout) findViewById(R.id.uc_tablayout);
-        mViewPager = (NoScrollViewPager) findViewById(R.id.uc_viewpager);
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        mNav = (NavigationView) findViewById(R.id.nav_view);
-        mNavIv=(ImageView) findViewById(R.id.uc_nav);
+        mZoomIv =  findViewById(R.id.uc_zoomiv);
+        mToolBar =  findViewById(R.id.toolbar);
+        titleContainer =  findViewById(R.id.title_layout);
+        mAppBarLayout =  findViewById(R.id.appbar_layout);
+        titleCenterLayout =  findViewById(R.id.title_center_layout);
+        progressBar =  findViewById(R.id.uc_progressbar);
+        mMsgTv = findViewById(R.id.frag_uc_follow_tv);
+        mMcTv = findViewById(R.id.frag_uc_msg_tv);
+        mSettingIv =  findViewById(R.id.uc_setting_iv);
+        mMsgIv =  findViewById(R.id.uc_msg_iv);
+        mAvater =  findViewById(R.id.uc_avater);
+        mTablayout =  findViewById(R.id.uc_tablayout);
+        mViewPager =  findViewById(R.id.uc_viewpager);
+        mDrawerLayout =  findViewById(R.id.drawer_layout);
+        mNav =  findViewById(R.id.nav_view);
+        mNavIv= findViewById(R.id.uc_nav);
+
 
 
     }

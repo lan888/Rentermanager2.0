@@ -14,11 +14,6 @@
         android:gravity="center"
         android:orientation="horizontal">
 
-        <com.example.ian.rentermanager2.widget.CircleImageView
-            android:id="@+id/title_uc_avater"
-            android:layout_width="60px"
-            android:layout_height="60px"
-            android:src="@drawable/ic_avater" />
 
         <TextView
             android:id="@+id/title_uc_title"

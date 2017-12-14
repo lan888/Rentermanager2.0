@@ -39,6 +39,7 @@ dependencies {
     compile 'com.jaeger.statusbarutil:library:1.4.0'
     compile 'cn.bmob.android:bmob-sdk:3.5.8'
     compile 'com.android.support:support-v4:26.+'
+    compile 'com.github.bumptech.glide:glide:3.6.1'
     testCompile 'junit:junit:4.12'
     compile project(':mylibrary')
 }
