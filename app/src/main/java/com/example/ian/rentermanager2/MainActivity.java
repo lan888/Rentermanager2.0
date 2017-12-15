@@ -29,11 +29,14 @@ import com.example.ian.rentermanager2.permission.PermissionManager;
 import com.example.ian.rentermanager2.utils.FileUtils;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import cn.bmob.v3.Bmob;
 import cn.bmob.v3.BmobUser;
 import cn.bmob.v3.datatype.BmobFile;
 import cn.bmob.v3.exception.BmobException;
+import cn.bmob.v3.listener.QueryListener;
 import cn.bmob.v3.listener.SaveListener;
 import cn.bmob.v3.listener.UploadFileListener;
 
@@ -77,7 +80,18 @@ public class MainActivity extends AppCompatActivity {
         mImageView = (RoundImageView) findViewById(R.id.admin_pic);
 
 
-
+        Bmob.getServerTime(new QueryListener<Long>() {
+            @Override
+            public void done(Long aLong, BmobException e) {
+                if(e==null){
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+                    String times = formatter.format(new Date(aLong * 1000L));
+                    Log.i("bmob","当前服务器时间为:" + times);
+                }else{
+                    Log.i("bmob","获取服务器时间失败:" + e.getMessage());
+                }
+            }
+        });
         helper = PermissionManager.with(MainActivity.this)
                 //添加权限请求码
                 .addRequestCode(MainActivity.TAKE_PICTURE)
@@ -89,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onGranted() {
                         //当权限被授予时调用
-                        Toast.makeText(MainActivity.this, "Camera Permission granted",Toast.LENGTH_LONG).show();
+                      //  Toast.makeText(MainActivity.this, "Camera Permission granted",Toast.LENGTH_LONG).show();
                     }
 
                     @Override
@@ -168,6 +182,7 @@ public class MainActivity extends AppCompatActivity {
 
                     }
                 });
+                Toast.makeText(MainActivity.this, "请点击头像框设置头像" , Toast.LENGTH_SHORT).show();
 
                 builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
                     @Override
@@ -189,25 +204,29 @@ public class MainActivity extends AppCompatActivity {
                                 if (firstPasswordInfo.matches("[0-9]{6}")) {
                                     if (firstPasswordInfo.equals(secondPasswordInfo)) {
                                         if (!mailInfo.equals("")) {
-                                            mUser.setUsername(nameInfo);
-                                            mUser.setPassword(secondPasswordInfo);
-                                            mUser.setEmail(mailInfo);
-                                            mUser.setMobilePhoneNumber(phoneInfo);
-                                            mUser.setImage(uri);
-                                            mUser.signUp(new SaveListener<BmobUser>() {
-                                                @Override
-                                                public void done(BmobUser bmobUser, BmobException e) {
-                                                    if(e==null){
-                                                        Toast.makeText(MainActivity.this, "注册成功:" +bmobUser.toString(), Toast.LENGTH_SHORT).show();
+                                            if (uri != null){
+                                                mUser.setUsername(nameInfo);
+                                                mUser.setPassword(secondPasswordInfo);
+                                                mUser.setEmail(mailInfo);
+                                                mUser.setMobilePhoneNumber(phoneInfo);
+                                                mUser.setImage(uri);
+                                                mUser.signUp(new SaveListener<BmobUser>() {
+                                                    @Override
+                                                    public void done(BmobUser bmobUser, BmobException e) {
+                                                        if(e==null){
+                                                            Toast.makeText(MainActivity.this, "注册成功:" +bmobUser.toString(), Toast.LENGTH_SHORT).show();
 
-                                                    }else{
-                                                        Log.e("fail","注册失败"+e);
-                                                        Toast.makeText(MainActivity.this, "注册失败"+e , Toast.LENGTH_SHORT).show();
+                                                        }else{
+                                                            Log.e("fail","注册失败"+e);
+                                                            Toast.makeText(MainActivity.this, "注册失败"+e , Toast.LENGTH_SHORT).show();
 
+                                                        }
                                                     }
-                                                }
-                                            });
+                                                });
+                                            }else {
+                                                Toast.makeText(MainActivity.this, "注册失败，请重试", Toast.LENGTH_SHORT).show();
 
+                                            }
                                         }
                                         else {
                                             Toast.makeText(MainActivity.this, "电子邮箱不能为空", Toast.LENGTH_SHORT).show();
@@ -259,6 +278,7 @@ public class MainActivity extends AppCompatActivity {
                         openAlbumIntent.setType("image/*");
                         //用startActivityForResult方法，待会儿重写onActivityResult()方法，拿到图片做裁剪操作
                         startActivityForResult(openAlbumIntent, CHOOSE_PICTURE);
+                        Toast.makeText(MainActivity.this,"设置头像成功",Toast.LENGTH_SHORT).show();
                         break;
                     case TAKE_PICTURE: // 拍照
                         if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
@@ -274,6 +294,7 @@ public class MainActivity extends AppCompatActivity {
                             tempUri = FileUtils.getUriForFile(MainActivity.this,file);
                             FileUtils.startActionFile(MainActivity.this,file,"image/*");
                             FileUtils.startActionCapture(MainActivity.this,file,TAKE_PICTURE);
+
                         } else {
                             Log.e("main","sdcard not exists");
                         }
@@ -295,11 +316,10 @@ public class MainActivity extends AppCompatActivity {
                     if (cursor1!=null&&cursor1.moveToFirst()){
                         int index1=cursor1.getColumnIndex("_display_name");
                         img_url1="/storage/emulated/0/ian/files/"+cursor1.getString(index1);
-                        cursor1.close();
                         upload(img_url1);
+                        Log.e("uri1","url:"+img_url1);
                     }else {
                          img_url1 = tempUri.getPath();
-                        Log.e("uri1","url:"+img_url1);
                         upload(img_url1);
                     }
 
@@ -314,9 +334,8 @@ public class MainActivity extends AppCompatActivity {
                     Log.e("bd_uri","uri:"+data.getData()+"\n"+cursor);
                     Toast.makeText(MainActivity.this,"uri:"+data.getData(),Toast.LENGTH_SHORT).show();
                     if (cursor!=null&&cursor.moveToFirst()) {
-                        int index1 = cursor.getColumnIndex("_data");
-                        String img_url = cursor.getString(index1);
-                        cursor.close();
+                        int index = cursor.getColumnIndex("_data");
+                        String img_url = cursor.getString(index);
                         upload(img_url);
                     }
                 }
@@ -326,6 +345,7 @@ public class MainActivity extends AppCompatActivity {
             case CROP_SMALL_PICTURE:
                 if (data != null){
                     setImageToView(data);
+                    Toast.makeText(MainActivity.this,"设置头像成功",Toast.LENGTH_SHORT).show();
                 }
                 break;
         }

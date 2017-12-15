@@ -3,9 +3,6 @@ package com.example.ian.rentermanager2;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -50,7 +47,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cn.bmob.v3.BmobQuery;
-import cn.bmob.v3.BmobUser;
 import cn.bmob.v3.datatype.BmobFile;
 import cn.bmob.v3.exception.BmobException;
 import cn.bmob.v3.listener.FindListener;
@@ -69,7 +65,7 @@ public class NewAdminActivity extends AppCompatActivity {
     private AppBarLayout mAppBarLayout;
     private ViewGroup titleCenterLayout;
     private RoundProgressBar progressBar;
-    private ImageView mSettingIv, mMsgIv,mNavIv;
+    private ImageView mSettingIv, mMsgIv,mNavIv,mExit;
     private TextView mMsgTv,nUser,mMcTv;
     private CircleImageView mAvater,mImg;
     private CommonTabLayout mTablayout;
@@ -85,6 +81,7 @@ public class NewAdminActivity extends AppCompatActivity {
     private ArrayList<String> mData2 = new ArrayList<String>();
     private ArrayList<String> mData3 = new ArrayList<String>();
     private myDatabaseHelper dbHelper;
+    MyUser user = MyUser.getCurrentUser(MyUser.class);
 
     public static final String action = "broadcast.action";
 
@@ -170,32 +167,62 @@ public class NewAdminActivity extends AppCompatActivity {
             initListener();
             initTab();
             initStatus();
+            if (user == null){
+                Intent intent = new Intent(NewAdminActivity.this,MainActivity.class);
+                Toast.makeText(NewAdminActivity.this,"请重新登陆",Toast.LENGTH_SHORT).show();
+                startActivity(intent);
+            }else {
+                final View headerView = mNav.getHeaderView(0);
+                nUser = headerView.findViewById(R.id.nav_user);
+                mImg = headerView.findViewById(R.id.nav_civ);
+                mExit = headerView.findViewById(R.id.nav_exit);
+//            final Intent intent = getIntent();
+//            String s1 = intent.getStringExtra("i");
+//            if (s1!=null){
+//                SharedPreferences.Editor editor = getSharedPreferences("data",MODE_PRIVATE).edit();
+//                editor.putString("name",s1);
+//                editor.apply();
+//
+//            }
+//            SharedPreferences pref = getSharedPreferences("data",MODE_PRIVATE);
+//            String s2 = pref.getString("name","");
+                String s2 = user.getUsername();
+                nUser.setText(s2);
 
-            final View headerView = mNav.getHeaderView(0);
-            nUser = headerView.findViewById(R.id.nav_user);
-            mImg = headerView.findViewById(R.id.nav_civ);
-            final Intent intent = getIntent();
-            String s1 = intent.getStringExtra("i");
-            if (s1!=null){
-                SharedPreferences.Editor editor = getSharedPreferences("data",MODE_PRIVATE).edit();
-                editor.putString("name",s1);
-                editor.apply();
+               // MyUser user = BmobUser.getCurrentUser(MyUser.class);
+                BmobFile file = user.getImage();
+                if (file != null){
+                    String url = file.getFileUrl();
+                    // FutureTarget<File> future = Glide.with(NewAdminActivity.this).load(url).downloadOnly(500,500);
+                    if (url != null){
+                        mAvater.setTag(null);
+                        Glide.with(NewAdminActivity.this).load(url).into(mAvater);
+                        mAvater.setTag(url);
+                        mZoomIv.setTag(null);
+                        Glide.with(NewAdminActivity.this).load(url).into(mZoomIv);
+                        mZoomIv.setTag(url);
+                        Glide.with(NewAdminActivity.this).load(url).into(mImg);
+                    }
+
+                }else {
+                    mAvater.setImageResource(R.drawable.ic_avater);
+                    mZoomIv.setImageResource(R.drawable.ic_avater);
+                    mImg.setImageResource(R.drawable.ic_avater);
+                }
+                mExit.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        MyUser.logOut();
+                        finish();
+                        Intent intent = new Intent(NewAdminActivity.this,MainActivity.class);
+                        startActivity(intent);
+                        Toast.makeText(NewAdminActivity.this,"已成功退出",Toast.LENGTH_SHORT).show();
+
+                    }
+                });
+
 
             }
-            SharedPreferences pref = getSharedPreferences("data",MODE_PRIVATE);
-            String s2 = pref.getString("name","");
-            nUser.setText(s2);
-
-            MyUser user = BmobUser.getCurrentUser(MyUser.class);
-                BmobFile file = user.getImage();
-                String url = file.getFileUrl();
-                Glide.with(NewAdminActivity.this).load(url).asBitmap().into(mAvater);
-                mZoomIv.setTag(null);
-                Glide.with(NewAdminActivity.this).load(url).asBitmap().into(mZoomIv);
-                mZoomIv.setTag(url);
-                Glide.with(NewAdminActivity.this).load(url).asBitmap().into(mImg);
-
-
 
         }
     };
@@ -227,6 +254,7 @@ public class NewAdminActivity extends AppCompatActivity {
 
 
 
+
     }
 
     private void initTab(){
@@ -247,8 +275,6 @@ public class NewAdminActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Toast.makeText(NewAdminActivity.this,"小样，赶紧交房租！哈哈哈",Toast.LENGTH_SHORT).show();
-                SQLiteDatabase db = dbHelper.getReadableDatabase();
-                db.execSQL("delete from bill " );
             }
         });
         mMcTv.setOnClickListener(new View.OnClickListener() {
@@ -279,17 +305,21 @@ public class NewAdminActivity extends AppCompatActivity {
                         if (numInfo.equals("")) {
                             Toast.makeText(NewAdminActivity.this, "房间号不能为空", Toast.LENGTH_SHORT).show();
                         } else {
-                            double billInfo = Double.parseDouble(bill.getText().toString());
-                            double waterBillInfo = Double.parseDouble(waterBill.getText().toString());
-                            double electricityBillInfo = Double.parseDouble(electricityBill.getText().toString());
-
+                            double billInfo1 = Double.parseDouble(bill.getText().toString());
+                            double waterBillInfo1 = Double.parseDouble(waterBill.getText().toString());
+                            double electricityBillInfo1 = Double.parseDouble(electricityBill.getText().toString());
+                            String billInfo = bill.getText().toString();
+                            String waterBillInfo = waterBill.getText().toString();
+                            String electricityBillInfo = electricityBill.getText().toString();
+                            Double sum =  billInfo1+waterBillInfo1+electricityBillInfo1;
+                            String sumInfo = sum.toString();
                             if (!numInfo.equals("")) {
                                 if (numInfo.matches("[0-9]{3}")) {
                                     if (bill.getText().toString().matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
                                         if (waterBill.getText().toString().matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
                                             if (electricityBill.getText().toString().matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
                                                 b1.setRoom(numInfo);
-                                                b1.setBill(billInfo+waterBillInfo+electricityBillInfo);
+                                                b1.setBill(sumInfo);
                                                 b1.setWaterBill(waterBillInfo);
                                                 b1.setElectricityBill(electricityBillInfo);
                                                 b1.setRoomBill(billInfo);
@@ -505,22 +535,22 @@ public class NewAdminActivity extends AppCompatActivity {
 
 
 
-    public int getData3(){
-        dbHelper = myDatabaseHelper.getInstance(this);
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        Cursor cursor = db.rawQuery("select room from bill", null);
-        while (cursor.moveToNext()) {
-            String s = cursor.getString(cursor.getColumnIndex("room"));
-            mData3.add(s);
-        }
-        return mData3.size();
-    }
+//    public int getData3(){
+//        dbHelper = myDatabaseHelper.getInstance(this);
+//        SQLiteDatabase db = dbHelper.getWritableDatabase();
+//        Cursor cursor = db.rawQuery("select room from bill", null);
+//        while (cursor.moveToNext()) {
+//            String s = cursor.getString(cursor.getColumnIndex("room"));
+//            mData3.add(s);
+//        }
+//        return mData3.size();
+//    }
     public String[] getNames() {
         String[] mName1 = new String[]{"房源"};
         String[] mName2 = new String[]{"租户"};
         String[] mName3 = new String[]{"账单"};
 
-         c = getData3();
+        // c = getData3();
         Log.i("b1","b:"+b);
         int i[] = {a,b,c};
 

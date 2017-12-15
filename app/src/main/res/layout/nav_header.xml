@@ -36,4 +36,13 @@
         android:textColor="@color/cardview_dark_background"
         android:textSize="20sp"/>
 
+    <ImageView
+        android:id="@+id/nav_exit"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_above="@+id/mail"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:src="@mipmap/exit"/>
+
 </RelativeLayout>

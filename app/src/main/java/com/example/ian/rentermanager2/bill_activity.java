@@ -30,15 +30,19 @@ import com.example.ian.rentermanager2.widget.StickyHeaderListView;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import cn.bmob.v3.BmobQuery;
+import cn.bmob.v3.datatype.BmobQueryResult;
 import cn.bmob.v3.exception.BmobException;
 import cn.bmob.v3.listener.FindListener;
+import cn.bmob.v3.listener.SQLQueryListener;
 import cn.bmob.v3.listener.SaveListener;
 import cn.bmob.v3.listener.UpdateListener;
 
@@ -56,6 +60,8 @@ public class bill_activity extends AppCompatActivity {
     private List<Bill> rows = new ArrayList<>();
     private boolean isOnLoadMore = false;
     private int count = 0;
+    String delBill;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -243,7 +249,7 @@ public class bill_activity extends AppCompatActivity {
                 for (Bill row : val) {
                     if (row.isChecked) {
                         count++;
-                        amount += row.getBill();
+                        amount += Double.parseDouble(row.getBill());
                     } else {
                         isCheckAll = false;
                     }
@@ -314,18 +320,39 @@ public class bill_activity extends AppCompatActivity {
                     builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
-
-                            b1.setObjectId(item.getObjectId());
-                            b1.delete(new UpdateListener() {
+                            Boolean b = true;
+                            String bql = "select getObjectId from Bill where isChecked = ?";
+                            new BmobQuery<Bill>().doSQLQuery(bql, new SQLQueryListener<Bill>() {
                                 @Override
-                                public void done(BmobException e) {
-                                    if(e==null){
-                                        Log.e("success","删除成功:"+b1.getRoom());
-                                    }else{
-                                        Log.e("fail","删除失败：" + e.getMessage());
+                                public void done(BmobQueryResult<Bill> bmobQueryResult, BmobException e) {
+                                    if (e==null) {
+                                        Log.e("success","查询成功:"+ bmobQueryResult);
+                                        List<Bill> list = bmobQueryResult.getResults();
+                                        if (list != null && list.size() > 0) {
+                                            for (Bill b : list) {
+                                                delBill = b.getObjectId();
+                                                Log.e("item_get", "item " + delBill);
+                                                b1.setObjectId(delBill);
+                                                b1.delete(new UpdateListener() {
+                                                    @Override
+                                                    public void done(BmobException e) {
+                                                        if(e==null){
+                                                            Log.e("success","删除成功:"+b1.getObjectId());
+                                                        }else{
+                                                            Log.e("fail","删除失败：" + e.getMessage());
+                                                        }
+                                                    }
+                                                });
+                                            }
+
+                                        }
+                                    }else {
+                                        Log.e("fail","查询失败：" + e.getMessage());
                                     }
                                 }
-                            });
+                            },b);
+
+
                             Intent intent = new Intent(bill_activity.this,SuccessDelActivity.class);
                             startActivity(intent);
                         }
@@ -339,7 +366,33 @@ public class bill_activity extends AppCompatActivity {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                     item.isChecked = isChecked;
+                    Log.e("item_ck","item "+item.isChecked);
                     updateValue();
+                    if (item.isChecked==true){
+                        b1.setChecked(true);
+                        b1.update(item.getObjectId(),new UpdateListener() {
+                            @Override
+                            public void done(BmobException e) {
+                                if(e==null){
+                                    Log.e("success","更新成功:"+ item.getObjectId() + item +b1.isChecked);
+                                }else{
+                                    Log.e("succes","更新失败：" + e.getMessage());
+                                }
+                            }
+                        });
+                    }else {
+                        b1.setChecked(false);
+                        b1.update(item.getObjectId(), new UpdateListener() {
+                            @Override
+                            public void done(BmobException e) {
+                                if (e == null) {
+                                    Log.e("success！", "更新成功:" + item.getObjectId() + item +b1.isChecked);
+                                } else {
+                                    Log.e("succes", "更新失败：" + e.getMessage());
+                                }
+                            }
+                        });
+                    }
                 }
             });
 
@@ -347,6 +400,33 @@ public class bill_activity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     checkBox.setChecked(!checkBox.isChecked());
+                    if (item.isChecked==true){
+                        b1.setChecked(true);
+                        b1.update(item.getObjectId(),new UpdateListener() {
+                            @Override
+                            public void done(BmobException e) {
+                                if(e==null){
+                                    Log.e("success","更新成功:"+ item.getObjectId() + item +b1.isChecked);
+                                }else{
+                                    Log.e("succes","更新失败：" + e.getMessage());
+                                }
+                            }
+                        });
+                    }else {
+                        b1.setChecked(false);
+                        b1.update(item.getObjectId(), new UpdateListener() {
+                            @Override
+                            public void done(BmobException e) {
+                                if (e == null) {
+                                    Log.e("success！", "更新成功:" + item.getObjectId() + item +b1.isChecked);
+                                } else {
+                                    Log.e("succes", "更新失败：" + e.getMessage());
+                                }
+                            }
+                        });
+                    }
+
+
                 }
             });
 
@@ -420,20 +500,29 @@ public class bill_activity extends AppCompatActivity {
                         if (numInfo.equals("")) {
                             Toast.makeText(bill_activity.this, "房间号不能为空", Toast.LENGTH_SHORT).show();
                         } else {
-                            double billInfo = Double.parseDouble(bill.getText().toString());
-                            double waterBillInfo = Double.parseDouble(waterBill.getText().toString());
-                            double electricityBillInfo = Double.parseDouble(electricityBill.getText().toString());
+                            SimpleDateFormat formatter    =   new    SimpleDateFormat    ("yyyy年MM月");
+                            Date curDate    =   new    Date(System.currentTimeMillis());//获取当前时间
+                            String    str    =    formatter.format(curDate);
 
+                            double billInfo1 = Double.parseDouble(bill.getText().toString());
+                            double waterBillInfo1 = Double.parseDouble(waterBill.getText().toString());
+                            double electricityBillInfo1 = Double.parseDouble(electricityBill.getText().toString());
+                            String billInfo = bill.getText().toString();
+                            String waterBillInfo = waterBill.getText().toString();
+                            String electricityBillInfo = electricityBill.getText().toString();
+                            Double sum =  billInfo1+waterBillInfo1+electricityBillInfo1;
+                            String sumInfo = sum.toString();
                             if (!numInfo.equals("")) {
                                 if (numInfo.matches("[0-9]{3}")) {
                                     if (bill.getText().toString().matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
                                         if (waterBill.getText().toString().matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
                                             if (electricityBill.getText().toString().matches("(([1-9][0-9]*)|(([0]\\.\\d{0,2}|[1-9][0-9]*\\.\\d{0,2})))")) {
                                                 b1.setRoom(numInfo);
-                                                b1.setBill(billInfo + waterBillInfo + electricityBillInfo);
+                                                b1.setBill(sumInfo);
                                                 b1.setWaterBill(waterBillInfo);
                                                 b1.setElectricityBill(electricityBillInfo);
                                                 b1.setRoomBill(billInfo);
+                                                b1.setMonth(str);
                                                 b1.setStatus("未缴费");
                                                 b1.save(new SaveListener<String>() {
                                                     @Override

@@ -25,7 +25,7 @@
             android:paddingRight="15dp"
             android:text="Rentersmanager"
             android:textColor="@color/colorBlack33"
-            android:textSize="28px" />
+            android:textSize="30px" />
     </LinearLayout>
 
     <com.example.ian.rentermanager2.widget.RoundProgressBar

@@ -33,7 +33,7 @@ public class ItemFragment3 extends Fragment {
     private List<String> mDataTime = new ArrayList<String>();
     String pi = null;
     String po =null;
-    double pp ;
+    String pp = null;
 
     public ItemFragment3() {
     }
@@ -126,9 +126,9 @@ public class ItemFragment3 extends Fragment {
 
             @Override
             public void onClick(View view) {
-                String roomInfo = mDatas.get(getAdapterPosition());
+                String roomInfo = mDataTime.get(getAdapterPosition()) ;
                 BmobQuery query = new BmobQuery<Bill>();
-                query.addWhereEqualTo("room",roomInfo);
+                query.addWhereEqualTo("createdAt",roomInfo);
                 query.setLimit(1);
                 query.findObjects(new FindListener<Bill>() {
                     @Override

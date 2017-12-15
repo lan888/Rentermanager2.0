@@ -8,33 +8,13 @@ import cn.bmob.v3.BmobObject;
 
 public class Bill extends BmobObject {
     private String room;
-    private double bill;
-    private double waterBill;
-    private double electricityBill;
-    private double roomBill;
+    private String bill;
+    private String waterBill;
+    private String electricityBill;
+    private String roomBill;
     private String month;
     public boolean isChecked;
     private String status;
-
-    public double getRoomBill() {
-        return roomBill;
-    }
-
-    public void setWaterBill(double waterBill) {
-        this.waterBill = waterBill;
-    }
-
-    public void setElectricityBill(double electricityBill) {
-        this.electricityBill = electricityBill;
-    }
-
-    public void setRoomBill(double roomBill) {
-        this.roomBill = roomBill;
-    }
-
-    public String getStatus() {
-        return status;
-    }
 
     public String getRoom() {
         return room;
@@ -44,20 +24,36 @@ public class Bill extends BmobObject {
         this.room = room;
     }
 
-    public double getBill() {
+    public String getBill() {
         return bill;
     }
 
-    public void setBill(double bill) {
+    public void setBill(String bill) {
         this.bill = bill;
     }
 
-    public double getWaterBill() {
+    public String getWaterBill() {
         return waterBill;
     }
 
-    public double getElectricityBill() {
+    public void setWaterBill(String waterBill) {
+        this.waterBill = waterBill;
+    }
+
+    public String getElectricityBill() {
         return electricityBill;
+    }
+
+    public void setElectricityBill(String electricityBill) {
+        this.electricityBill = electricityBill;
+    }
+
+    public String getRoomBill() {
+        return roomBill;
+    }
+
+    public void setRoomBill(String roomBill) {
+        this.roomBill = roomBill;
     }
 
     public String getMonth() {
@@ -74,6 +70,10 @@ public class Bill extends BmobObject {
 
     public void setChecked(boolean checked) {
         isChecked = checked;
+    }
+
+    public String getStatus() {
+        return status;
     }
 
     public void setStatus(String status) {
